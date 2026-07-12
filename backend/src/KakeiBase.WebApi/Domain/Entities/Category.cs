@@ -23,4 +23,10 @@ public class Category
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void Update(string name, TransactionType type)
+    {
+        Name = name;
+        Type = type;
+    }
 }
