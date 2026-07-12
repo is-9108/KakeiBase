@@ -2,6 +2,7 @@ using System.Text;
 using FluentValidation;
 using KakeiBase.WebApi.Application.Interfaces;
 using KakeiBase.WebApi.Application.UseCases.Auth;
+using KakeiBase.WebApi.Application.UseCases.Categories;
 using KakeiBase.WebApi.Endpoints;
 using KakeiBase.WebApi.Infrastructure.Auth;
 using KakeiBase.WebApi.Infrastructure.Persistence;
@@ -68,6 +69,13 @@ builder.Services.AddScoped<LoginUseCase>();
 builder.Services.AddScoped<RefreshTokenUseCase>();
 builder.Services.AddScoped<LogoutUseCase>();
 
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<CreateCategoryUseCase>();
+builder.Services.AddScoped<GetCategoriesUseCase>();
+builder.Services.AddScoped<GetCategoryUseCase>();
+builder.Services.AddScoped<UpdateCategoryUseCase>();
+builder.Services.AddScoped<DeleteCategoryUseCase>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -83,6 +91,7 @@ app.UseAuthorization();
 
 app.MapHealthEndpoint();
 app.MapAuthEndpoints();
+app.MapCategoryEndpoints();
 
 app.Run();
 
