@@ -9,6 +9,7 @@ public class KakeiBaseDbContext(DbContextOptions<KakeiBaseDbContext> options) : 
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(KakeiBaseDbContext).Assembly);
