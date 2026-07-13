@@ -36,7 +36,7 @@ CI/CD: GitHub Actions → ECR → ECS / S3 へ自動デプロイ
 IaC  : Terraform
 ```
 
-バックエンドは1プロジェクト内でのフォルダ分離による軽量レイヤードアーキテクチャ(Domain / Application / Infrastructure)を採用しています。フルのクリーンアーキテクチャではなく、プロジェクトの複雑度に見合う構成をあえて選んだ経緯は [ADR-0002](./docs/adr/0002-lightweight-layered-architecture.md) を参照してください。詳細な構成図は [docs/architecture.md](./docs/architecture.md)(準備中)を参照してください。
+バックエンドは1プロジェクト内でのフォルダ分離による軽量レイヤードアーキテクチャ(Domain / Application / Infrastructure)を採用しています。フルのクリーンアーキテクチャではなく、プロジェクトの複雑度に見合う構成をあえて選んだ経緯は [ADR-0002](./docs/adr/0002-lightweight-layered-architecture.md) を参照してください。詳細な構成図は [docs/architecture.md](./docs/architecture.md) を参照してください。
 
 ## 技術スタック
 
