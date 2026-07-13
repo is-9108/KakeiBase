@@ -14,21 +14,27 @@
 ## 1. インフラ構成
 
 ```
-ブラウザ
+ブラウザ (自宅IPのみ許可)
   │
   ├── 静的ファイル (HTML/CSS/JS)
   │     CloudFront → S3
   │
   └── API リクエスト
-        CloudFront → ALB → ECS Fargate (コンテナ) → Amazon RDS (PostgreSQL)
+        CloudFront → ALB (パブリックサブネット)
+                       → ECS Fargate (プライベートサブネット・アプリ)
+                           → Amazon RDS (プライベートサブネット・DB, PostgreSQL)
 
 S3 (レシート画像バケット)
   │
   └── S3イベント通知
-        └── Lambda (レシートOCR) → Amazon Textract → Amazon RDS
+        └── Lambda (レシートOCR, プライベートサブネット) → Amazon Textract → Amazon RDS
 
 Amazon EventBridge (毎月1日)
-  └── Lambda (月次レポート) → Amazon RDS → Amazon SES → ユーザーメール
+  └── Lambda (月次レポート, プライベートサブネット) → Amazon RDS → Amazon SES → ユーザーメール
+
+プライベートサブネットからの外向き通信:
+  ECS / Lambda → NAT Gateway (パブリックサブネット) → インターネット (ECR pull, Textract, SES)
+             └→ S3 Gateway型VPCエンドポイント → S3 (ECRイメージレイヤー, レシート画像)
 ```
 
 ### 構成要素
@@ -37,9 +43,9 @@ Amazon EventBridge (毎月1日)
 |---|---|---|
 | CDN | Amazon CloudFront | 静的ファイル配信、APIキャッシュ制御 |
 | 静的ホスティング | Amazon S3 | React SPAのビルド成果物 |
-| ロードバランサー | ALB (Application Load Balancer) | HTTPSターミネーション、トラフィック分散 |
-| APIサーバー | ECS Fargate | .NET 8 Web API コンテナ実行 |
-| データベース | Amazon RDS (PostgreSQL) | 家計データ永続化 |
+| ロードバランサー | ALB (Application Load Balancer) | HTTPSターミネーション、トラフィック分散(自宅IPのみ許可) |
+| APIサーバー | ECS Fargate | .NET 8 Web API コンテナ実行(プライベートサブネット) |
+| データベース | Amazon RDS (PostgreSQL) | 家計データ永続化(プライベートサブネット・DB専用) |
 | コンテナレジストリ | Amazon ECR | Dockerイメージ管理 |
 | IaC | Terraform | インフラ構成管理 |
 | S3 (レシートバケット) | Amazon S3 | レシート画像の保存 |
@@ -47,6 +53,21 @@ Amazon EventBridge (毎月1日)
 | メール送信 | Amazon SES | 月次レポートメール配信 |
 | スケジューラー | Amazon EventBridge | 月次レポート Lambda のトリガー |
 | サーバーレス処理 | AWS Lambda | レシートOCR / 月次レポート生成 |
+| 外向き通信経路 | NAT Gateway (シングルAZ) | プライベートサブネットからインターネット/AWSサービスへの通信 |
+| VPCエンドポイント | S3 Gateway型 | S3宛通信をNAT経由にせず直接ルーティング(無料) |
+
+### ネットワーク構成
+
+サブネットはパブリック/プライベート(アプリ)/プライベート(DB専用)の3種類に分離し、セキュリティグループはCIDRではなくSG間参照で連鎖させる。外部からのアクセスは自宅IPのみに限定する。詳細な検討過程・料金試算は [ADR-0008](./adr/0008-private-network-nat-gateway.md) を参照。
+
+| SG | インバウンド | アウトバウンド |
+|---|---|---|
+| `alb-sg` | 443 を自宅IPのみから許可 | `ecs-sg` の 8080 のみ |
+| `ecs-sg` | 8080 を `alb-sg` からのみ | `rds-sg` の 5432、外向き 443 |
+| `lambda-sg` | なし | `rds-sg` の 5432、外向き 443 |
+| `rds-sg` | 5432 を `ecs-sg` と `lambda-sg` からのみ | なし |
+
+RDSへの管理アクセスは踏み台EC2を置かず、ECS Exec(SSM経由)で稼働中コンテナからpsqlを実行する。マイグレーションはデプロイパイプライン内のECS one-offタスクとして実行する。
 
 ### CI/CD パイプライン
 

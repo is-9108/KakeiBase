@@ -24,19 +24,24 @@
 
 - [ADR-0001: アーキテクチャ決定記録を残す方針](./docs/adr/0001-record-architecture-decisions.md)
 - [ADR-0002: バックエンドは軽量レイヤードアーキテクチャを採用する](./docs/adr/0002-lightweight-layered-architecture.md)
+- [ADR-0008: ネットワークは完全プライベート構成とし、外向き経路はNAT Gateway + S3 Gateway型エンドポイントを採用する](./docs/adr/0008-private-network-nat-gateway.md)
 
 ## アーキテクチャ
 
 ```
-[利用者]
+[利用者](自宅IPのみ許可)
    ├─ CloudFront → S3 (React / Vite, 静的ホスティング)
-   └─ ALB → ECS Fargate (.NET 8 Web API) → RDS (PostgreSQL)
+   └─ CloudFront → ALB(パブリックサブネット) → ECS Fargate(プライベートサブネット) → RDS(プライベートサブネット)
+
+外向き通信: NAT Gateway + S3 Gateway型VPCエンドポイント(プライベートサブネットのECS/Lambda用)
 
 CI/CD: GitHub Actions → ECR → ECS / S3 へ自動デプロイ
 IaC  : Terraform
 ```
 
-バックエンドは1プロジェクト内でのフォルダ分離による軽量レイヤードアーキテクチャ(Domain / Application / Infrastructure)を採用しています。フルのクリーンアーキテクチャではなく、プロジェクトの複雑度に見合う構成をあえて選んだ経緯は [ADR-0002](./docs/adr/0002-lightweight-layered-architecture.md) を参照してください。詳細な構成図は [docs/architecture.md](./docs/architecture.md) を参照してください。
+バックエンドは1プロジェクト内でのフォルダ分離による軽量レイヤードアーキテクチャ(Domain / Application / Infrastructure)を採用しています。フルのクリーンアーキテクチャではなく、プロジェクトの複雑度に見合う構成をあえて選んだ経緯は [ADR-0002](./docs/adr/0002-lightweight-layered-architecture.md) を参照してください。
+
+ネットワークはRDS・ECSをプライベートサブネットに配置し、外部からのアクセスは自宅IPのみに限定する完全プライベート構成です。設計判断は [ADR-0008](./docs/adr/0008-private-network-nat-gateway.md) を参照してください。詳細な構成図は [docs/architecture.md](./docs/architecture.md) を参照してください。
 
 ## 技術スタック
 
@@ -45,7 +50,7 @@ IaC  : Terraform
 | フロントエンド | React, TypeScript, Vite |
 | バックエンド | .NET 8 (ASP.NET Core Web API), 軽量レイヤードアーキテクチャ |
 | データベース | PostgreSQL (Amazon RDS) |
-| インフラ | AWS (S3, CloudFront, ALB, ECS Fargate, RDS), Terraform |
+| インフラ | AWS (S3, CloudFront, ALB, ECS Fargate, RDS, VPC/NAT Gateway), Terraform |
 | CI/CD | GitHub Actions, Amazon ECR |
 | テスト | xUnit, NSubstitute, Testcontainers, Vitest, React Testing Library, Playwright |
 

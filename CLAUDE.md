@@ -15,7 +15,7 @@ KakeiBase — 家計簿管理Webアプリケーション。自社開発企業へ
 | フロントエンド | React, TypeScript, Vite |
 | バックエンド | .NET 8 (ASP.NET Core Web API) |
 | データベース | PostgreSQL |
-| インフラ | AWS (S3, CloudFront, ALB, ECS Fargate, RDS), Terraform |
+| インフラ | AWS (S3, CloudFront, ALB, ECS Fargate, RDS, VPC/NAT Gateway), Terraform |
 | CI/CD | GitHub Actions, Amazon ECR |
 | テスト | xUnit, NSubstitute, Testcontainers, NetArchTest, Vitest, React Testing Library, Playwright |
 
