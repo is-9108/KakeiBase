@@ -19,7 +19,7 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
 
         builder.Property(t => t.Amount)
             .HasColumnName("amount")
-            .HasColumnType("numeric(12,0)")
+            .HasColumnType("integer")
             .IsRequired();
 
         builder.Property(t => t.Type)

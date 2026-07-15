@@ -21,10 +21,10 @@ public class CreateTransactionUseCaseTests
         var date = new DateOnly(2026, 7, 15);
 
         var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, categoryId, 1000m, TransactionType.Expense, date, "テスト", null);
+        var result = await sut.ExecuteAsync(userId, categoryId, 1000, TransactionType.Expense, date, "テスト", null);
 
         result.Should().NotBeNull();
-        result.Amount.Should().Be(1000m);
+        result.Amount.Should().Be(1000);
         result.Type.Should().Be(TransactionType.Expense);
         result.Date.Should().Be(date);
         result.Memo.Should().Be("テスト");
@@ -40,7 +40,7 @@ public class CreateTransactionUseCaseTests
         var date = new DateOnly(2026, 7, 15);
 
         var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, categoryId, 500m, TransactionType.Income, date, null, null);
+        var result = await sut.ExecuteAsync(userId, categoryId, 500, TransactionType.Income, date, null, null);
 
         result.CategoryId.Should().Be(categoryId);
     }

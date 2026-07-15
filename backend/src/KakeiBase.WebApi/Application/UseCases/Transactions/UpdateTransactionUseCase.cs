@@ -16,7 +16,7 @@ public class UpdateTransactionUseCase(ITransactionRepository transactionReposito
         Guid userId,
         Guid transactionId,
         Guid categoryId,
-        decimal amount,
+        int amount,
         TransactionType type,
         DateOnly date,
         string? memo,

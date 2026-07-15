@@ -19,8 +19,8 @@ public class GetTransactionsUseCaseTests
         var userId = Guid.NewGuid();
         var transactions = new List<Transaction>
         {
-            Transaction.Create(userId, Guid.NewGuid(), 1000m, TransactionType.Expense, new DateOnly(2026, 7, 1)),
-            Transaction.Create(userId, Guid.NewGuid(), 2000m, TransactionType.Income, new DateOnly(2026, 6, 15)),
+            Transaction.Create(userId, Guid.NewGuid(), 1000, TransactionType.Expense, new DateOnly(2026, 7, 1)),
+            Transaction.Create(userId, Guid.NewGuid(), 2000, TransactionType.Income, new DateOnly(2026, 6, 15)),
         };
 
         _transactionRepository
@@ -39,7 +39,7 @@ public class GetTransactionsUseCaseTests
         var userId = Guid.NewGuid();
         var transactions = new List<Transaction>
         {
-            Transaction.Create(userId, Guid.NewGuid(), 1000m, TransactionType.Expense, new DateOnly(2026, 7, 1)),
+            Transaction.Create(userId, Guid.NewGuid(), 1000, TransactionType.Expense, new DateOnly(2026, 7, 1)),
         };
 
         _transactionRepository

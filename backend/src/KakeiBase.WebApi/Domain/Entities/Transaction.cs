@@ -8,7 +8,7 @@ public class Transaction
     public Guid UserId { get; private set; }
     public Guid CategoryId { get; private set; }
     public Guid? SubscriptionId { get; private set; }
-    public decimal Amount { get; private set; }
+    public int Amount { get; private set; }
     public TransactionType Type { get; private set; }
     public DateOnly Date { get; private set; }
     public string? Memo { get; private set; }
@@ -21,7 +21,7 @@ public class Transaction
     public static Transaction Create(
         Guid userId,
         Guid categoryId,
-        decimal amount,
+        int amount,
         TransactionType type,
         DateOnly date,
         string? memo = null,
@@ -45,7 +45,7 @@ public class Transaction
 
     public void Update(
         Guid categoryId,
-        decimal amount,
+        int amount,
         TransactionType type,
         DateOnly date,
         string? memo,
@@ -69,7 +69,7 @@ public class Transaction
             UserId = subscription.UserId,
             CategoryId = subscription.CategoryId,
             SubscriptionId = subscription.Id,
-            Amount = subscription.Amount,
+            Amount = (int)subscription.Amount,
             Type = TransactionType.Expense,
             Date = date,
             Memo = subscription.Name,

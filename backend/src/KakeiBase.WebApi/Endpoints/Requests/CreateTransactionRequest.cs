@@ -5,7 +5,7 @@ namespace KakeiBase.WebApi.Endpoints.Requests;
 
 public record CreateTransactionRequest(
     Guid CategoryId,
-    decimal Amount,
+    int Amount,
     TransactionType Type,
     DateOnly Date,
     string? Memo,

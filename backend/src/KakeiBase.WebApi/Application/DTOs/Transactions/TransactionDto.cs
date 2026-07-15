@@ -6,7 +6,7 @@ public record TransactionDto(
     Guid Id,
     Guid CategoryId,
     Guid? SubscriptionId,
-    decimal Amount,
+    int Amount,
     TransactionType Type,
     DateOnly Date,
     string? Memo,

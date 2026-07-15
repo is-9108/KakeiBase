@@ -17,7 +17,7 @@ public class DeleteTransactionUseCaseTests
     public async Task ExecuteAsync_WithExistingTransaction_DeletesAndReturnsTrue()
     {
         var userId = Guid.NewGuid();
-        var transaction = Transaction.Create(userId, Guid.NewGuid(), 1000m, TransactionType.Expense, new DateOnly(2026, 7, 1));
+        var transaction = Transaction.Create(userId, Guid.NewGuid(), 1000, TransactionType.Expense, new DateOnly(2026, 7, 1));
 
         _transactionRepository.FindByIdAsync(transaction.Id).Returns(transaction);
 
@@ -49,7 +49,7 @@ public class DeleteTransactionUseCaseTests
     {
         var userId = Guid.NewGuid();
         var otherUserId = Guid.NewGuid();
-        var transaction = Transaction.Create(otherUserId, Guid.NewGuid(), 1000m, TransactionType.Expense, new DateOnly(2026, 7, 1));
+        var transaction = Transaction.Create(otherUserId, Guid.NewGuid(), 1000, TransactionType.Expense, new DateOnly(2026, 7, 1));
 
         _transactionRepository.FindByIdAsync(transaction.Id).Returns(transaction);
 

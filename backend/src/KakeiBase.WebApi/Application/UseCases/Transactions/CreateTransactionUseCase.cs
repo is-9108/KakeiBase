@@ -10,7 +10,7 @@ public class CreateTransactionUseCase(ITransactionRepository transactionReposito
     public async Task<TransactionDto> ExecuteAsync(
         Guid userId,
         Guid categoryId,
-        decimal amount,
+        int amount,
         TransactionType type,
         DateOnly date,
         string? memo,
