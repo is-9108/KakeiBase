@@ -41,12 +41,14 @@ KakeiBase — 家計簿管理Webアプリケーション。自社開発企業へ
 - 非同期メソッドは `Async` サフィックス、`CancellationToken` を受け取る
 - 入力バリデーションは FluentValidation を使う
 - Controllerには薄いロジックのみ。ビジネスロジックはApplication層のユースケースに書く
+- public/internalなメソッド・プロパティにはXMLドキュメントコメント(`/// <summary>`)を付与する。メソッドは処理内容(`<summary>`)・各引数の意味(`<param>`)・戻り値の意味(`<returns>`)を明記し、プロパティは何を格納する値かを`<summary>`に明記する。privateメンバーは自明でない場合のみ付与する
 
 **フロントエンド(React/TypeScript)**
 - 関数コンポーネント + Hooksのみ(クラスコンポーネント禁止)
 - APIアクセスは `src/api/` に集約し、コンポーネントから直接fetchしない
 - 状態管理はまずReact標準(useState/useContext)で足りるかを検討し、安易にライブラリを増やさない
 - Tailwindなどのユーティリティクラスを使う場合はコンポーネント内で完結させる
+- exportする関数・コンポーネント・型のpublicなプロパティにはJSDocコメントを付与する。関数は処理内容・引数・戻り値を明記し、propsやオブジェクトの各フィールドは何を表す値かを明記する
 
 ## テストの方針
 
