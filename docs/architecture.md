@@ -262,6 +262,8 @@ frontend/
 5. S3 オブジェクトキーを receipt_s3_key カラムに記録
 ```
 
+**S3 オブジェクトキー形式:** `{yyyy}/{MM}/{yyyyMMdd}_{HHmmss}.{fff}.jpg`(例: `2026/07/20260716_143052.418.jpg`)。年/月フォルダ階層とミリ秒付きタイムスタンプファイル名の採用理由は [ADR-0010](./adr/0010-receipt-image-s3-key-structure.md) を参照。
+
 **エラー処理:** パース失敗時はログ出力のみ。DLQ による再処理は将来対応とする。
 
 **関連 API:** `POST /api/receipts/presigned-url` — フロントエンドが S3 に直接アップロードするための Presigned PUT URL を取得する。
