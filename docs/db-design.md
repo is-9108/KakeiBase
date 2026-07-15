@@ -35,7 +35,7 @@ erDiagram
         uuid user_id FK
         uuid category_id FK
         varchar(100) name
-        numeric(12-0) amount
+        integer amount
         boolean is_active
         timestamptz created_at
         timestamptz updated_at
@@ -46,7 +46,7 @@ erDiagram
         uuid user_id FK
         uuid category_id FK
         uuid subscription_id FK
-        numeric(12-0) amount
+        integer amount
         text transaction_type
         date transaction_date
         text memo
@@ -122,7 +122,7 @@ erDiagram
 | `user_id` | uuid | NOT NULL | FK → users(id) CASCADE | 所有ユーザー |
 | `category_id` | uuid | NOT NULL | FK → categories(id) RESTRICT | カテゴリ |
 | `name` | varchar(100) | NOT NULL | | サービス名 |
-| `amount` | numeric(12,0) | NOT NULL | | 金額（円、整数） |
+| `amount` | integer | NOT NULL | | 金額（円、整数） |
 | `is_active` | boolean | NOT NULL | | 有効フラグ |
 | `created_at` | timestamptz | NOT NULL | | 作成日時 |
 | `updated_at` | timestamptz | NOT NULL | | 更新日時 |
@@ -147,7 +147,7 @@ erDiagram
 | `user_id` | uuid | NOT NULL | FK → users(id) CASCADE | 所有ユーザー |
 | `category_id` | uuid | NOT NULL | FK → categories(id) RESTRICT | カテゴリ |
 | `subscription_id` | uuid | NULL | FK → subscriptions(id) SET NULL | 紐づくサブスク（手動入力時は NULL） |
-| `amount` | numeric(12,0) | NOT NULL | | 金額（円、整数） |
+| `amount` | integer | NOT NULL | | 金額（円、整数） |
 | `transaction_type` | text | NOT NULL | | 収支種別 (`Income` / `Expense`) |
 | `transaction_date` | date | NOT NULL | | 取引日 |
 | `memo` | text | NULL | | メモ |
@@ -190,9 +190,13 @@ JWT リフレッシュトークンの管理。詳細は [ADR-0004](./adr/0004-au
 
 ## 設計上の判断
 
-### 金額を `numeric(12,0)` にした理由
+### 金額 (`transactions.amount` / `subscriptions.amount`) を `integer` にした理由
 
-金額は整数（円）で扱い、小数点以下を持たない。`decimal` / `numeric(12,0)` は浮動小数点誤差がなく、最大 999,999,999,999 円（約1兆円）まで表現できる。
+日本円は小数点以下を持たないため、金額は整数で扱う。`integer`（32bit符号付き整数）を選んだ理由:
+
+- **型レベルで不正値を防止**: `integer` は整数のみ受け付けるため「0.5円」のような値をスキーマで弾ける。`numeric(12,0)` でも小数部は 0 固定だが、型が `decimal` であるため C# 層で不正値を生成できてしまう
+- **意味の明確さ**: `integer` は「整数」を直接表現しており、意図がコードとスキーマ双方で読み取れる
+- **上限の妥当性**: `integer` の最大値は約 21 億（2,147,483,647 円）。家計簿の 1 取引・サブスク金額としては十分
 
 ### `transaction_type` を enum でなく text にした理由
 

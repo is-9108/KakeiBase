@@ -11,7 +11,7 @@ public class SubscriptionTests
             userId: Guid.NewGuid(),
             categoryId: Guid.NewGuid(),
             name: "Netflix",
-            amount: 1490m);
+            amount: 1490);
 
     [Fact]
     public void GenerateTransaction_WhenActive_ReturnsExpenseTransaction()

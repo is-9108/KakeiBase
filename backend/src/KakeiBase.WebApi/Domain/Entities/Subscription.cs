@@ -6,14 +6,14 @@ public class Subscription
     public Guid UserId { get; private set; }
     public Guid CategoryId { get; private set; }
     public string Name { get; private set; } = string.Empty;
-    public decimal Amount { get; private set; }
+    public int Amount { get; private set; }
     public bool IsActive { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
     private Subscription() { }
 
-    public static Subscription Create(Guid userId, Guid categoryId, string name, decimal amount)
+    public static Subscription Create(Guid userId, Guid categoryId, string name, int amount)
     {
         var now = DateTimeOffset.UtcNow;
         return new Subscription
