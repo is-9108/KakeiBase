@@ -29,6 +29,7 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
 
         builder.Property(t => t.Date).HasColumnName("transaction_date").IsRequired();
         builder.Property(t => t.Memo).HasColumnName("memo");
+        builder.Property(t => t.ReceiptS3Key).HasColumnName("receipt_s3_key");
         builder.Property(t => t.CreatedAt).HasColumnName("created_at");
         builder.Property(t => t.UpdatedAt).HasColumnName("updated_at");
 

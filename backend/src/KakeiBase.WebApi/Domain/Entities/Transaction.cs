@@ -12,6 +12,7 @@ public class Transaction
     public TransactionType Type { get; private set; }
     public DateOnly Date { get; private set; }
     public string? Memo { get; private set; }
+    public string? ReceiptS3Key { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -23,7 +24,8 @@ public class Transaction
         decimal amount,
         TransactionType type,
         DateOnly date,
-        string? memo = null)
+        string? memo = null,
+        string? receiptS3Key = null)
     {
         var now = DateTimeOffset.UtcNow;
         return new Transaction
@@ -35,9 +37,27 @@ public class Transaction
             Type = type,
             Date = date,
             Memo = memo,
+            ReceiptS3Key = receiptS3Key,
             CreatedAt = now,
             UpdatedAt = now
         };
+    }
+
+    public void Update(
+        Guid categoryId,
+        decimal amount,
+        TransactionType type,
+        DateOnly date,
+        string? memo,
+        string? receiptS3Key)
+    {
+        CategoryId = categoryId;
+        Amount = amount;
+        Type = type;
+        Date = date;
+        Memo = memo;
+        ReceiptS3Key = receiptS3Key;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     internal static Transaction FromSubscription(Subscription subscription, DateOnly date)
