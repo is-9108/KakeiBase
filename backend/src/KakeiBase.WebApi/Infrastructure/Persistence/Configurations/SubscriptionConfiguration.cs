@@ -23,7 +23,7 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
 
         builder.Property(s => s.Amount)
             .HasColumnName("amount")
-            .HasColumnType("numeric(12,0)")
+            .HasColumnType("integer")
             .IsRequired();
 
         builder.Property(s => s.IsActive).HasColumnName("is_active");

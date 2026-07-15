@@ -35,7 +35,7 @@ erDiagram
         uuid user_id FK
         uuid category_id FK
         varchar(100) name
-        numeric(12-0) amount
+        integer amount
         boolean is_active
         timestamptz created_at
         timestamptz updated_at
@@ -122,7 +122,7 @@ erDiagram
 | `user_id` | uuid | NOT NULL | FK → users(id) CASCADE | 所有ユーザー |
 | `category_id` | uuid | NOT NULL | FK → categories(id) RESTRICT | カテゴリ |
 | `name` | varchar(100) | NOT NULL | | サービス名 |
-| `amount` | numeric(12,0) | NOT NULL | | 金額（円、整数） |
+| `amount` | integer | NOT NULL | | 金額（円、整数） |
 | `is_active` | boolean | NOT NULL | | 有効フラグ |
 | `created_at` | timestamptz | NOT NULL | | 作成日時 |
 | `updated_at` | timestamptz | NOT NULL | | 更新日時 |
