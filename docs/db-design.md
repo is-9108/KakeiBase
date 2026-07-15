@@ -190,13 +190,15 @@ JWT リフレッシュトークンの管理。詳細は [ADR-0004](./adr/0004-au
 
 ## 設計上の判断
 
-### 金額 (`transactions.amount` / `subscriptions.amount`) を `integer` にした理由
+### transactions.amount を `integer` にした理由
 
 日本円は小数点以下を持たないため、金額は整数で扱う。`integer`（32bit符号付き整数）を選んだ理由:
 
 - **型レベルで不正値を防止**: `integer` は整数のみ受け付けるため「0.5円」のような値をスキーマで弾ける。`numeric(12,0)` でも小数部は 0 固定だが、型が `decimal` であるため C# 層で不正値を生成できてしまう
 - **意味の明確さ**: `integer` は「整数」を直接表現しており、意図がコードとスキーマ双方で読み取れる
-- **上限の妥当性**: `integer` の最大値は約 21 億（2,147,483,647 円）。家計簿の 1 取引・サブスク金額としては十分
+- **上限の妥当性**: `integer` の最大値は約 21 億（2,147,483,647 円）。家計簿の 1 取引金額としては十分
+
+`subscriptions.amount` は別ブランチ（Subscription CRUD 実装時）で同様に変更予定。
 
 ### `transaction_type` を enum でなく text にした理由
 

@@ -3,6 +3,7 @@ using System;
 using KakeiBase.WebApi.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KakeiBase.WebApi.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(KakeiBaseDbContext))]
-    partial class KakeiBaseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260715103351_AddReceiptS3KeyToTransactions")]
+    partial class AddReceiptS3KeyToTransactions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -99,8 +102,8 @@ namespace KakeiBase.WebApi.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<int>("Amount")
-                        .HasColumnType("integer")
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(12,0)")
                         .HasColumnName("amount");
 
                     b.Property<Guid>("CategoryId")
@@ -145,8 +148,8 @@ namespace KakeiBase.WebApi.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<int>("Amount")
-                        .HasColumnType("integer")
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(12,0)")
                         .HasColumnName("amount");
 
                     b.Property<Guid>("CategoryId")

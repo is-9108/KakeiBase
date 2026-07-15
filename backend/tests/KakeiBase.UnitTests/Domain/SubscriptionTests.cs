@@ -25,7 +25,7 @@ public class SubscriptionTests
         transaction.UserId.Should().Be(subscription.UserId);
         transaction.CategoryId.Should().Be(subscription.CategoryId);
         transaction.SubscriptionId.Should().Be(subscription.Id);
-        transaction.Amount.Should().Be(subscription.Amount);
+        transaction.Amount.Should().Be((int)subscription.Amount);
         transaction.Type.Should().Be(TransactionType.Expense);
         transaction.Date.Should().Be(date);
         transaction.Memo.Should().Be(subscription.Name);
