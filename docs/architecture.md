@@ -246,7 +246,8 @@ frontend/
 ## 6. サーバーレス処理 (Lambda)
 
 詳細な採用理由は [ADR-0005](./adr/0005-receipt-ocr-lambda.md) および [ADR-0006](./adr/0006-monthly-report-lambda-ses.md) を参照。
-実装言語はどちらも Python 3.12 で統一する（Boto3 SDK の事例が充実しており、運用コストを下げるため）。
+実装言語はすべて Go で統一する（単一バイナリによるコールドスタートの速さと、AWS SDK for Go v2 の成熟度を優先。詳細は [ADR-0009](./adr/0009-lambda-runtime-go.md) を参照）。
+ビルド: `GOOS=linux GOARCH=arm64 go build -o bootstrap main.go`（ARM64 は Lambda の安価なオプション）。
 
 ### Lambda #1: レシートOCR
 
