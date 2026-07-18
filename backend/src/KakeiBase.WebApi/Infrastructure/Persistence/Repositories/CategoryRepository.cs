@@ -15,6 +15,7 @@ public class CategoryRepository(KakeiBaseDbContext dbContext) : ICategoryReposit
 
     public Task<bool> ExistsByUserIdAndNameAndTypeAsync(Guid userId, string name, TransactionType type, Guid? excludeId = null, CancellationToken ct = default)
         => dbContext.Categories
+            // excludeId がある場合は自身を除外してチェック
             .Where(c => c.UserId == userId && c.Name == name && c.Type == type && (excludeId == null || c.Id != excludeId))
             .AnyAsync(ct);
 

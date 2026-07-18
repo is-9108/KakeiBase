@@ -4,12 +4,17 @@ using KakeiBase.WebApi.Domain.Entities;
 
 namespace KakeiBase.WebApi.Application.UseCases.Auth;
 
+/// <summary>メールアドレスとパスワードによるログイン認証を行うユースケース</summary>
 public class LoginUseCase(
     IUserRepository userRepository,
     IRefreshTokenRepository refreshTokenRepository,
     IJwtTokenService jwtTokenService,
     IPasswordHasher passwordHasher)
 {
+    /// <param name="email">ログインするメールアドレス</param>
+    /// <param name="password">平文パスワード</param>
+    /// <param name="ct">キャンセルトークン</param>
+    /// <returns>認証成功時はトークン情報。メールアドレス未存在またはパスワード不一致の場合は null</returns>
     public async Task<LoginResult?> ExecuteAsync(string email, string password, CancellationToken ct = default)
     {
         var user = await userRepository.FindByEmailAsync(email, ct);
