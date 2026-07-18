@@ -5,7 +5,8 @@ namespace KakeiBase.WebApi.Application.Interfaces;
 /// <summary>リフレッシュトークンの永続化操作を抽象化するリポジトリインターフェース</summary>
 public interface IRefreshTokenRepository
 {
-    /// <returns>指定ハッシュに一致するリフレッシュトークン。存在しない場合または失効済みの場合は null</returns>
+    /// <summary>ハッシュ値でリフレッシュトークンを検索する</summary>
+    /// <returns>指定ハッシュに一致するリフレッシュトークン。存在しない場合は null</returns>
     Task<RefreshToken?> FindByTokenHashAsync(string tokenHash, CancellationToken ct = default);
 
     /// <summary>リフレッシュトークンをコンテキストに追加する</summary>

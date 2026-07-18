@@ -18,15 +18,15 @@ public class TransactionRepository(KakeiBaseDbContext dbContext) : ITransactionR
     {
         var query = dbContext.Transactions.Where(t => t.UserId == userId);
 
-        // year フィルター適用
+        // null の場合は全年を対象とする
         if (year.HasValue)
             query = query.Where(t => t.Date.Year == year.Value);
 
-        // month フィルター適用
+        // null の場合は全月を対象とする
         if (month.HasValue)
             query = query.Where(t => t.Date.Month == month.Value);
 
-        // categoryId フィルター適用
+        // null の場合は全カテゴリを対象とする
         if (categoryId.HasValue)
             query = query.Where(t => t.CategoryId == categoryId.Value);
 
