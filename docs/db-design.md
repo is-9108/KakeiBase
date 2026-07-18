@@ -47,7 +47,6 @@ erDiagram
         uuid category_id FK
         uuid subscription_id FK
         integer amount
-        text transaction_type
         date transaction_date
         text memo
         text receipt_s3_key
@@ -148,7 +147,6 @@ erDiagram
 | `category_id` | uuid | NOT NULL | FK → categories(id) RESTRICT | カテゴリ |
 | `subscription_id` | uuid | NULL | FK → subscriptions(id) SET NULL | 紐づくサブスク（手動入力時は NULL） |
 | `amount` | integer | NOT NULL | | 金額（円、整数） |
-| `transaction_type` | text | NOT NULL | | 収支種別 (`Income` / `Expense`) |
 | `transaction_date` | date | NOT NULL | | 取引日 |
 | `memo` | text | NULL | | メモ |
 | `receipt_s3_key` | text | NULL | | レシート画像の S3 オブジェクトキー（手動入力時は NULL） |
@@ -200,9 +198,13 @@ JWT リフレッシュトークンの管理。詳細は [ADR-0004](./adr/0004-au
 
 `subscriptions.amount` は別ブランチ（Subscription CRUD 実装時）で同様に変更予定。
 
-### `transaction_type` を enum でなく text にした理由
+### `categories.transaction_type` を enum でなく text にした理由
 
 EF Core の `text` + C# enum の変換を使用する。PostgreSQL の `CREATE TYPE` を避けることでマイグレーションのシンプルさを保ちつつ、アプリ層での型安全性は C# enum で担保する。
+
+### `transactions` テーブルに `transaction_type` を持たない理由
+
+取引の収支種別は紐づく `category_id` のカテゴリが持つ `transaction_type` で決定できる。`transactions` に同カラムを持たせると DB レベルでの整合性保証が難しく（異なる種別のカテゴリと取引を紐づけることが可能になる）、二重管理となるため削除した。収支区分が必要な処理（ダッシュボード集計など）はカテゴリテーブルから導出する。
 
 ### カテゴリ削除を RESTRICT にした理由
 
