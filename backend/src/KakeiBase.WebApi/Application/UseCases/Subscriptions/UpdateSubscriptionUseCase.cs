@@ -9,7 +9,7 @@ public record UpdateSubscriptionResult(bool IsNotFound, SubscriptionDto? Subscri
     public static UpdateSubscriptionResult Success(SubscriptionDto dto) => new(false, dto);
 }
 
-public class UpdateSubscriptionUseCase(ISubscriptionRepository subscriptionRepository)
+public class UpdateSubscriptionUseCase(ISubscriptionRepository subscriptionRepository, ICategoryRepository categoryRepository)
 {
     public async Task<UpdateSubscriptionResult> ExecuteAsync(
         Guid userId,
@@ -22,6 +22,10 @@ public class UpdateSubscriptionUseCase(ISubscriptionRepository subscriptionRepos
     {
         var subscription = await subscriptionRepository.FindByIdAsync(subscriptionId, ct);
         if (subscription is null || subscription.UserId != userId)
+            return UpdateSubscriptionResult.NotFound();
+
+        var category = await categoryRepository.FindByIdAsync(categoryId, ct);
+        if (category is null || category.UserId != userId)
             return UpdateSubscriptionResult.NotFound();
 
         subscription.Update(categoryId, name, amount, isActive);
