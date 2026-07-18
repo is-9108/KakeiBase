@@ -38,6 +38,15 @@ public class Subscription
         return Transaction.FromSubscription(this, date);
     }
 
+    public void Update(Guid categoryId, string name, int amount, bool isActive)
+    {
+        CategoryId = categoryId;
+        Name = name;
+        Amount = amount;
+        IsActive = isActive;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     public void Deactivate()
     {
         IsActive = false;

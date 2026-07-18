@@ -3,6 +3,7 @@ using FluentValidation;
 using KakeiBase.WebApi.Application.Interfaces;
 using KakeiBase.WebApi.Application.UseCases.Auth;
 using KakeiBase.WebApi.Application.UseCases.Categories;
+using KakeiBase.WebApi.Application.UseCases.Subscriptions;
 using KakeiBase.WebApi.Application.UseCases.Transactions;
 using KakeiBase.WebApi.Endpoints;
 using KakeiBase.WebApi.Infrastructure.Auth;
@@ -84,6 +85,13 @@ builder.Services.AddScoped<CreateTransactionUseCase>();
 builder.Services.AddScoped<UpdateTransactionUseCase>();
 builder.Services.AddScoped<DeleteTransactionUseCase>();
 
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<GetSubscriptionsUseCase>();
+builder.Services.AddScoped<GetSubscriptionUseCase>();
+builder.Services.AddScoped<CreateSubscriptionUseCase>();
+builder.Services.AddScoped<UpdateSubscriptionUseCase>();
+builder.Services.AddScoped<DeleteSubscriptionUseCase>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -101,6 +109,7 @@ app.MapHealthEndpoint();
 app.MapAuthEndpoints();
 app.MapCategoryEndpoints();
 app.MapTransactionEndpoints();
+app.MapSubscriptionEndpoints();
 
 app.Run();
 
