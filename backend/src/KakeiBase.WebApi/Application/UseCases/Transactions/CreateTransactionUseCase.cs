@@ -6,7 +6,7 @@ using KakeiBase.WebApi.Domain.Enums;
 namespace KakeiBase.WebApi.Application.UseCases.Transactions;
 
 /// <summary>新しい収支を作成するユースケース</summary>
-public class CreateTransactionUseCase(ITransactionRepository transactionRepository)
+public class CreateTransactionUseCase(ITransactionRepository transactionRepository, ICategoryRepository categoryRepository)
 {
     /// <param name="userId">作成するユーザーのID</param>
     /// <param name="categoryId">カテゴリのID</param>
@@ -16,7 +16,8 @@ public class CreateTransactionUseCase(ITransactionRepository transactionReposito
     /// <param name="memo">メモ（省略可）</param>
     /// <param name="receiptS3Key">領収書画像の S3 オブジェクトキー（省略可）</param>
     /// <param name="ct">キャンセルトークン</param>
-    public async Task<TransactionDto> ExecuteAsync(
+    /// <returns>作成された収支。カテゴリが存在しないまたは所有者が異なる場合は null</returns>
+    public async Task<TransactionDto?> ExecuteAsync(
         Guid userId,
         Guid categoryId,
         int amount,
@@ -26,6 +27,10 @@ public class CreateTransactionUseCase(ITransactionRepository transactionReposito
         string? receiptS3Key,
         CancellationToken ct = default)
     {
+        var category = await categoryRepository.FindByIdAsync(categoryId, ct);
+        if (category is null || category.UserId != userId)
+            return null;
+
         var transaction = Transaction.Create(userId, categoryId, amount, type, date, memo, receiptS3Key);
         await transactionRepository.AddAsync(transaction, ct);
         await transactionRepository.SaveChangesAsync(ct);

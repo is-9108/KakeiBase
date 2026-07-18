@@ -10,8 +10,9 @@ namespace KakeiBase.UnitTests.Application.Transactions;
 public class CreateTransactionUseCaseTests
 {
     private readonly ITransactionRepository _transactionRepository = Substitute.For<ITransactionRepository>();
+    private readonly ICategoryRepository _categoryRepository = Substitute.For<ICategoryRepository>();
 
-    private CreateTransactionUseCase CreateSut() => new(_transactionRepository);
+    private CreateTransactionUseCase CreateSut() => new(_transactionRepository, _categoryRepository);
 
     [Fact]
     public async Task ExecuteAsync_WithValidInput_ReturnsTransactionDto()
@@ -19,12 +20,14 @@ public class CreateTransactionUseCaseTests
         var userId = Guid.NewGuid();
         var categoryId = Guid.NewGuid();
         var date = new DateOnly(2026, 7, 15);
+        var category = Category.Create(userId, "食費", TransactionType.Expense);
+        _categoryRepository.FindByIdAsync(categoryId).Returns(category);
 
         var sut = CreateSut();
         var result = await sut.ExecuteAsync(userId, categoryId, 1000, TransactionType.Expense, date, "テスト", null);
 
         result.Should().NotBeNull();
-        result.Amount.Should().Be(1000);
+        result!.Amount.Should().Be(1000);
         result.Type.Should().Be(TransactionType.Expense);
         result.Date.Should().Be(date);
         result.Memo.Should().Be("テスト");
@@ -38,10 +41,44 @@ public class CreateTransactionUseCaseTests
         var userId = Guid.NewGuid();
         var categoryId = Guid.NewGuid();
         var date = new DateOnly(2026, 7, 15);
+        var category = Category.Create(userId, "給与", TransactionType.Income);
+        _categoryRepository.FindByIdAsync(categoryId).Returns(category);
 
         var sut = CreateSut();
         var result = await sut.ExecuteAsync(userId, categoryId, 500, TransactionType.Income, date, null, null);
 
-        result.CategoryId.Should().Be(categoryId);
+        result!.CategoryId.Should().Be(categoryId);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_CategoryNotFound_ReturnsNull()
+    {
+        var userId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var date = new DateOnly(2026, 7, 15);
+        _categoryRepository.FindByIdAsync(categoryId).Returns((Category?)null);
+
+        var sut = CreateSut();
+        var result = await sut.ExecuteAsync(userId, categoryId, 1000, TransactionType.Expense, date, null, null);
+
+        result.Should().BeNull();
+        await _transactionRepository.DidNotReceive().AddAsync(Arg.Any<Transaction>());
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_CategoryOwnedByOtherUser_ReturnsNull()
+    {
+        var userId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var date = new DateOnly(2026, 7, 15);
+        var category = Category.Create(otherUserId, "他ユーザーのカテゴリ", TransactionType.Expense);
+        _categoryRepository.FindByIdAsync(categoryId).Returns(category);
+
+        var sut = CreateSut();
+        var result = await sut.ExecuteAsync(userId, categoryId, 1000, TransactionType.Expense, date, null, null);
+
+        result.Should().BeNull();
+        await _transactionRepository.DidNotReceive().AddAsync(Arg.Any<Transaction>());
     }
 }
