@@ -3,8 +3,13 @@ using KakeiBase.WebApi.Application.Interfaces;
 
 namespace KakeiBase.WebApi.Application.UseCases.Transactions;
 
+/// <summary>収支を1件取得するユースケース</summary>
 public class GetTransactionUseCase(ITransactionRepository transactionRepository)
 {
+    /// <param name="userId">リクエストユーザーのID</param>
+    /// <param name="transactionId">取得する収支のID</param>
+    /// <param name="ct">キャンセルトークン</param>
+    /// <returns>収支が存在する場合はDTO。未存在または別ユーザーのリソースの場合は null</returns>
     public async Task<TransactionDto?> ExecuteAsync(Guid userId, Guid transactionId, CancellationToken ct = default)
     {
         var transaction = await transactionRepository.FindByIdAsync(transactionId, ct);
