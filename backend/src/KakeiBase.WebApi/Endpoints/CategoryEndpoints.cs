@@ -107,6 +107,8 @@ public static class CategoryEndpoints
         return deleted ? Results.NoContent() : Results.NotFound();
     }
 
+    /// <summary>JWT の sub クレームからユーザーIDを取得する</summary>
+    /// <returns>ユーザーID。JWT に sub クレームが存在しない場合は null</returns>
     private static Guid? GetUserId(HttpContext httpContext)
     {
         var sub = httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;

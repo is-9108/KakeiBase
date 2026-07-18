@@ -77,6 +77,10 @@ public static class AuthEndpoints
         return Results.Ok();
     }
 
+    /// <summary>アクセストークンとリフレッシュトークンを HttpOnly Cookie にセットする</summary>
+    /// <param name="httpContext">レスポンスに Cookie を付与する HTTP コンテキスト</param>
+    /// <param name="result">セットするトークン情報</param>
+    /// <param name="isDevelopment">開発環境かどうか（false の場合は Secure フラグを有効にする）</param>
     private static void SetTokenCookies(HttpContext httpContext, LoginResult result, bool isDevelopment)
     {
         var isSecure = !isDevelopment;

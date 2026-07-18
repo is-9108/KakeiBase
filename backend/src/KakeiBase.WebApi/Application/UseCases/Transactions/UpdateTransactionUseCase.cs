@@ -6,12 +6,25 @@ namespace KakeiBase.WebApi.Application.UseCases.Transactions;
 
 public record UpdateTransactionResult(bool IsNotFound, TransactionDto? Transaction)
 {
+    /// <summary>対象収支が存在しない、または別ユーザーのリソースである場合の結果を生成する</summary>
     public static UpdateTransactionResult NotFound() => new(true, null);
+    /// <summary>更新成功時の結果を生成する</summary>
     public static UpdateTransactionResult Success(TransactionDto dto) => new(false, dto);
 }
 
+/// <summary>収支情報を更新するユースケース</summary>
 public class UpdateTransactionUseCase(ITransactionRepository transactionRepository)
 {
+    /// <param name="userId">リクエストユーザーのID</param>
+    /// <param name="transactionId">更新する収支のID</param>
+    /// <param name="categoryId">新しいカテゴリのID</param>
+    /// <param name="amount">新しい金額（円単位）</param>
+    /// <param name="type">新しい収支区分</param>
+    /// <param name="date">新しい発生日付</param>
+    /// <param name="memo">新しいメモ（null で削除）</param>
+    /// <param name="receiptS3Key">新しい領収書 S3 キー（null で削除）</param>
+    /// <param name="ct">キャンセルトークン</param>
+    /// <returns>更新結果。IsNotFound は未存在または別ユーザーのリソースを示す</returns>
     public async Task<UpdateTransactionResult> ExecuteAsync(
         Guid userId,
         Guid transactionId,
