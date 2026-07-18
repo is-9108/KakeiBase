@@ -21,7 +21,7 @@ public class GetTransactionsUseCase(ITransactionRepository transactionRepository
         var transactions = await transactionRepository.FindAllByUserIdAsync(userId, year, month, categoryId, ct);
         return transactions
             .Select(t => new TransactionDto(
-                t.Id, t.CategoryId, t.SubscriptionId, t.Amount, t.Type,
+                t.Id, t.CategoryId, t.SubscriptionId, t.Amount,
                 t.Date, t.Memo, t.ReceiptS3Key, t.CreatedAt, t.UpdatedAt))
             .ToList();
     }

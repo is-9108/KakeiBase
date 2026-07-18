@@ -49,7 +49,7 @@ public class TransactionRepositoryTests : IAsyncLifetime
     public async Task AddAsync_AndFindByIdAsync_ReturnsCreatedTransaction()
     {
         var (user, category) = await CreateUserAndCategoryAsync();
-        var transaction = Transaction.Create(user.Id, category.Id, 1000, TransactionType.Expense, new DateOnly(2026, 7, 1), "ランチ");
+        var transaction = Transaction.Create(user.Id, category.Id, 1000, new DateOnly(2026, 7, 1), "ランチ");
 
         await _sut.AddAsync(transaction);
         await _sut.SaveChangesAsync();
@@ -69,9 +69,9 @@ public class TransactionRepositoryTests : IAsyncLifetime
         var (user, category) = await CreateUserAndCategoryAsync("user1@example.com");
         var (otherUser, otherCategory) = await CreateUserAndCategoryAsync("user2@example.com");
 
-        var t1 = Transaction.Create(user.Id, category.Id, 1000, TransactionType.Expense, new DateOnly(2026, 7, 1));
-        var t2 = Transaction.Create(user.Id, category.Id, 2000, TransactionType.Expense, new DateOnly(2026, 7, 2));
-        var t3 = Transaction.Create(otherUser.Id, otherCategory.Id, 3000, TransactionType.Expense, new DateOnly(2026, 7, 3));
+        var t1 = Transaction.Create(user.Id, category.Id, 1000, new DateOnly(2026, 7, 1));
+        var t2 = Transaction.Create(user.Id, category.Id, 2000, new DateOnly(2026, 7, 2));
+        var t3 = Transaction.Create(otherUser.Id, otherCategory.Id, 3000, new DateOnly(2026, 7, 3));
 
         await _sut.AddAsync(t1);
         await _sut.AddAsync(t2);
@@ -89,8 +89,8 @@ public class TransactionRepositoryTests : IAsyncLifetime
     {
         var (user, category) = await CreateUserAndCategoryAsync();
 
-        var julyTx = Transaction.Create(user.Id, category.Id, 1000, TransactionType.Expense, new DateOnly(2026, 7, 15));
-        var juneTx = Transaction.Create(user.Id, category.Id, 2000, TransactionType.Expense, new DateOnly(2026, 6, 10));
+        var julyTx = Transaction.Create(user.Id, category.Id, 1000, new DateOnly(2026, 7, 15));
+        var juneTx = Transaction.Create(user.Id, category.Id, 2000, new DateOnly(2026, 6, 10));
 
         await _sut.AddAsync(julyTx);
         await _sut.AddAsync(juneTx);
@@ -110,8 +110,8 @@ public class TransactionRepositoryTests : IAsyncLifetime
         await _dbContext.Categories.AddAsync(otherCategory);
         await _dbContext.SaveChangesAsync();
 
-        var t1 = Transaction.Create(user.Id, category.Id, 1000, TransactionType.Expense, new DateOnly(2026, 7, 1));
-        var t2 = Transaction.Create(user.Id, otherCategory.Id, 500, TransactionType.Expense, new DateOnly(2026, 7, 2));
+        var t1 = Transaction.Create(user.Id, category.Id, 1000, new DateOnly(2026, 7, 1));
+        var t2 = Transaction.Create(user.Id, otherCategory.Id, 500, new DateOnly(2026, 7, 2));
 
         await _sut.AddAsync(t1);
         await _sut.AddAsync(t2);
@@ -127,7 +127,7 @@ public class TransactionRepositoryTests : IAsyncLifetime
     public async Task DeleteAsync_RemovesTransaction()
     {
         var (user, category) = await CreateUserAndCategoryAsync();
-        var transaction = Transaction.Create(user.Id, category.Id, 1000, TransactionType.Expense, new DateOnly(2026, 7, 1));
+        var transaction = Transaction.Create(user.Id, category.Id, 1000, new DateOnly(2026, 7, 1));
 
         await _sut.AddAsync(transaction);
         await _sut.SaveChangesAsync();

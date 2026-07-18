@@ -23,18 +23,19 @@ public class GetDashboardSummaryUseCase(
         var categories = await categoryRepository
             .FindAllByUserIdAsync(userId, ct);
         var categoryMap = categories.ToDictionary(c => c.Id, c => c.Name);
+        var categoryTypeMap = categories.ToDictionary(c => c.Id, c => c.Type);
 
         var totalIncome = transactions
-            .Where(t => t.Type == TransactionType.Income)
+            .Where(t => categoryTypeMap.GetValueOrDefault(t.CategoryId) == TransactionType.Income)
             .Sum(t => t.Amount);
         var totalExpense = transactions
-            .Where(t => t.Type == TransactionType.Expense)
+            .Where(t => categoryTypeMap.GetValueOrDefault(t.CategoryId) == TransactionType.Expense)
             .Sum(t => t.Amount);
         var balance = totalIncome - totalExpense;
 
         // カテゴリ別内訳（支出のみ）、金額降順
         var breakdown = transactions
-            .Where(t => t.Type == TransactionType.Expense)
+            .Where(t => categoryTypeMap.GetValueOrDefault(t.CategoryId) == TransactionType.Expense)
             .GroupBy(t => t.CategoryId)
             .Select(g => new CategoryBreakdownDto(
                 categoryMap.GetValueOrDefault(g.Key, "不明"),
@@ -51,7 +52,7 @@ public class GetDashboardSummaryUseCase(
             .Select(t => new RecentTransactionDto(
                 t.Id,
                 categoryMap.GetValueOrDefault(t.CategoryId, "不明"),
-                t.Type,
+                categoryTypeMap.GetValueOrDefault(t.CategoryId),
                 t.Amount,
                 t.Date,
                 t.Memo))

@@ -44,12 +44,13 @@ public class GetDashboardSummaryUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WithMixedTransactions_ReturnsTotalsCorrectly()
     {
-        var categoryId = Guid.NewGuid();
+        var incomeCategory = Category.Create(UserId, "給与", TransactionType.Income);
+        var expenseCategory = Category.Create(UserId, "食費", TransactionType.Expense);
         var transactions = new List<Transaction>
         {
-            Transaction.Create(UserId, categoryId, 200_000, TransactionType.Income,  new DateOnly(2026, 7, 25)),
-            Transaction.Create(UserId, categoryId,  40_000, TransactionType.Expense, new DateOnly(2026, 7, 20)),
-            Transaction.Create(UserId, categoryId, 110_000, TransactionType.Expense, new DateOnly(2026, 7, 10)),
+            Transaction.Create(UserId, incomeCategory.Id,  200_000, new DateOnly(2026, 7, 25)),
+            Transaction.Create(UserId, expenseCategory.Id,  40_000, new DateOnly(2026, 7, 20)),
+            Transaction.Create(UserId, expenseCategory.Id, 110_000, new DateOnly(2026, 7, 10)),
         };
 
         _transactionRepository
@@ -57,7 +58,7 @@ public class GetDashboardSummaryUseCaseTests
             .Returns(transactions);
         _categoryRepository
             .FindAllByUserIdAsync(UserId)
-            .Returns([Category.Create(UserId, "食費", TransactionType.Expense)]);
+            .Returns([incomeCategory, expenseCategory]);
 
         var sut = CreateSut();
         var result = await sut.ExecuteAsync(UserId, Year, Month);
@@ -69,11 +70,12 @@ public class GetDashboardSummaryUseCaseTests
     [Fact]
     public async Task ExecuteAsync_CalculatesBalance_IncomeMinusExpense()
     {
-        var categoryId = Guid.NewGuid();
+        var incomeCategory = Category.Create(UserId, "給与", TransactionType.Income);
+        var expenseCategory = Category.Create(UserId, "食費", TransactionType.Expense);
         var transactions = new List<Transaction>
         {
-            Transaction.Create(UserId, categoryId, 200_000, TransactionType.Income,  new DateOnly(2026, 7, 1)),
-            Transaction.Create(UserId, categoryId, 150_000, TransactionType.Expense, new DateOnly(2026, 7, 2)),
+            Transaction.Create(UserId, incomeCategory.Id,  200_000, new DateOnly(2026, 7, 1)),
+            Transaction.Create(UserId, expenseCategory.Id, 150_000, new DateOnly(2026, 7, 2)),
         };
 
         _transactionRepository
@@ -81,7 +83,7 @@ public class GetDashboardSummaryUseCaseTests
             .Returns(transactions);
         _categoryRepository
             .FindAllByUserIdAsync(UserId)
-            .Returns([]);
+            .Returns([incomeCategory, expenseCategory]);
 
         var sut = CreateSut();
         var result = await sut.ExecuteAsync(UserId, Year, Month);
@@ -92,12 +94,12 @@ public class GetDashboardSummaryUseCaseTests
     [Fact]
     public async Task ExecuteAsync_CategoryBreakdown_ContainsOnlyExpenses()
     {
-        var expenseCategoryId = Guid.NewGuid();
-        var incomeCategoryId  = Guid.NewGuid();
+        var incomeCategory = Category.Create(UserId, "給与", TransactionType.Income);
+        var expenseCategory = Category.Create(UserId, "食費", TransactionType.Expense);
         var transactions = new List<Transaction>
         {
-            Transaction.Create(UserId, incomeCategoryId,  200_000, TransactionType.Income,  new DateOnly(2026, 7, 1)),
-            Transaction.Create(UserId, expenseCategoryId,  40_000, TransactionType.Expense, new DateOnly(2026, 7, 2)),
+            Transaction.Create(UserId, incomeCategory.Id,  200_000, new DateOnly(2026, 7, 1)),
+            Transaction.Create(UserId, expenseCategory.Id,  40_000, new DateOnly(2026, 7, 2)),
         };
 
         _transactionRepository
@@ -105,11 +107,7 @@ public class GetDashboardSummaryUseCaseTests
             .Returns(transactions);
         _categoryRepository
             .FindAllByUserIdAsync(UserId)
-            .Returns(
-            [
-                Category.Create(UserId, "給与", TransactionType.Income),
-                Category.Create(UserId, "食費", TransactionType.Expense),
-            ]);
+            .Returns([incomeCategory, expenseCategory]);
 
         var sut = CreateSut();
         var result = await sut.ExecuteAsync(UserId, Year, Month);
@@ -121,12 +119,12 @@ public class GetDashboardSummaryUseCaseTests
     [Fact]
     public async Task ExecuteAsync_CategoryBreakdown_PercentageSumsTo100()
     {
-        var catA = Guid.NewGuid();
-        var catB = Guid.NewGuid();
+        var catA = Category.Create(UserId, "食費", TransactionType.Expense);
+        var catB = Category.Create(UserId, "交通費", TransactionType.Expense);
         var transactions = new List<Transaction>
         {
-            Transaction.Create(UserId, catA, 30_000, TransactionType.Expense, new DateOnly(2026, 7, 1)),
-            Transaction.Create(UserId, catB, 70_000, TransactionType.Expense, new DateOnly(2026, 7, 2)),
+            Transaction.Create(UserId, catA.Id, 30_000, new DateOnly(2026, 7, 1)),
+            Transaction.Create(UserId, catB.Id, 70_000, new DateOnly(2026, 7, 2)),
         };
 
         _transactionRepository
@@ -134,7 +132,7 @@ public class GetDashboardSummaryUseCaseTests
             .Returns(transactions);
         _categoryRepository
             .FindAllByUserIdAsync(UserId)
-            .Returns([]);
+            .Returns([catA, catB]);
 
         var sut = CreateSut();
         var result = await sut.ExecuteAsync(UserId, Year, Month);
@@ -147,11 +145,11 @@ public class GetDashboardSummaryUseCaseTests
     [Fact]
     public async Task ExecuteAsync_RecentTransactions_LimitedToFive()
     {
-        var categoryId = Guid.NewGuid();
+        var expenseCategory = Category.Create(UserId, "食費", TransactionType.Expense);
         // 6 件（リポジトリは date 降順で返すことを想定）
         var transactions = Enumerable.Range(1, 6)
             .Select(i => Transaction.Create(
-                UserId, categoryId, i * 1000, TransactionType.Expense,
+                UserId, expenseCategory.Id, i * 1000,
                 new DateOnly(2026, 7, i)))
             .Reverse() // 降順
             .ToList();
@@ -161,7 +159,7 @@ public class GetDashboardSummaryUseCaseTests
             .Returns(transactions);
         _categoryRepository
             .FindAllByUserIdAsync(UserId)
-            .Returns([]);
+            .Returns([expenseCategory]);
 
         var sut = CreateSut();
         var result = await sut.ExecuteAsync(UserId, Year, Month);
@@ -172,10 +170,10 @@ public class GetDashboardSummaryUseCaseTests
     [Fact]
     public async Task ExecuteAsync_CategoryBreakdown_WhenNoExpense_PercentageIsZero()
     {
-        var categoryId = Guid.NewGuid();
+        var incomeCategory = Category.Create(UserId, "給与", TransactionType.Income);
         var transactions = new List<Transaction>
         {
-            Transaction.Create(UserId, categoryId, 200_000, TransactionType.Income, new DateOnly(2026, 7, 1)),
+            Transaction.Create(UserId, incomeCategory.Id, 200_000, new DateOnly(2026, 7, 1)),
         };
 
         _transactionRepository
@@ -183,7 +181,7 @@ public class GetDashboardSummaryUseCaseTests
             .Returns(transactions);
         _categoryRepository
             .FindAllByUserIdAsync(UserId)
-            .Returns([]);
+            .Returns([incomeCategory]);
 
         var sut = CreateSut();
         var result = await sut.ExecuteAsync(UserId, Year, Month);

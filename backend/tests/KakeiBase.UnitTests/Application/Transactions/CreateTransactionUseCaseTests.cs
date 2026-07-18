@@ -24,11 +24,10 @@ public class CreateTransactionUseCaseTests
         _categoryRepository.FindByIdAsync(categoryId).Returns(category);
 
         var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, categoryId, 1000, TransactionType.Expense, date, "テスト", null);
+        var result = await sut.ExecuteAsync(userId, categoryId, 1000, date, "テスト", null);
 
         result.Should().NotBeNull();
         result!.Amount.Should().Be(1000);
-        result.Type.Should().Be(TransactionType.Expense);
         result.Date.Should().Be(date);
         result.Memo.Should().Be("テスト");
         await _transactionRepository.Received(1).AddAsync(Arg.Any<Transaction>());
@@ -45,7 +44,7 @@ public class CreateTransactionUseCaseTests
         _categoryRepository.FindByIdAsync(categoryId).Returns(category);
 
         var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, categoryId, 500, TransactionType.Income, date, null, null);
+        var result = await sut.ExecuteAsync(userId, categoryId, 500, date, null, null);
 
         result!.CategoryId.Should().Be(categoryId);
     }
@@ -59,7 +58,7 @@ public class CreateTransactionUseCaseTests
         _categoryRepository.FindByIdAsync(categoryId).Returns((Category?)null);
 
         var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, categoryId, 1000, TransactionType.Expense, date, null, null);
+        var result = await sut.ExecuteAsync(userId, categoryId, 1000, date, null, null);
 
         result.Should().BeNull();
         await _transactionRepository.DidNotReceive().AddAsync(Arg.Any<Transaction>());
@@ -76,7 +75,7 @@ public class CreateTransactionUseCaseTests
         _categoryRepository.FindByIdAsync(categoryId).Returns(category);
 
         var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, categoryId, 1000, TransactionType.Expense, date, null, null);
+        var result = await sut.ExecuteAsync(userId, categoryId, 1000, date, null, null);
 
         result.Should().BeNull();
         await _transactionRepository.DidNotReceive().AddAsync(Arg.Any<Transaction>());
