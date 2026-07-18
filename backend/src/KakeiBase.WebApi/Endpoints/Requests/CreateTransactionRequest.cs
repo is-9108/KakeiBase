@@ -1,12 +1,10 @@
 using FluentValidation;
-using KakeiBase.WebApi.Domain.Enums;
 
 namespace KakeiBase.WebApi.Endpoints.Requests;
 
 public record CreateTransactionRequest(
     Guid CategoryId,
     int Amount,
-    TransactionType Type,
     DateOnly Date,
     string? Memo,
     string? ReceiptS3Key);
@@ -20,9 +18,6 @@ public class CreateTransactionRequestValidator : AbstractValidator<CreateTransac
 
         RuleFor(x => x.Amount)
             .GreaterThan(0);
-
-        RuleFor(x => x.Type)
-            .IsInEnum();
 
         RuleFor(x => x.Date)
             .NotEmpty();

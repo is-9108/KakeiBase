@@ -1,5 +1,3 @@
-using KakeiBase.WebApi.Domain.Enums;
-
 namespace KakeiBase.WebApi.Application.DTOs.Transactions;
 
 public record TransactionDto(
@@ -7,7 +5,6 @@ public record TransactionDto(
     Guid CategoryId,
     Guid? SubscriptionId,
     int Amount,
-    TransactionType Type,
     DateOnly Date,
     string? Memo,
     string? ReceiptS3Key,

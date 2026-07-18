@@ -63,7 +63,9 @@ public static class SubscriptionEndpoints
             return Results.Unauthorized();
 
         var result = await useCase.ExecuteAsync(userId.Value, request.CategoryId, request.Name, request.Amount, ct);
-        return Results.Created($"/api/subscriptions/{result.Id}", result);
+        return result is null
+            ? Results.NotFound()
+            : Results.Created($"/api/subscriptions/{result.Id}", result);
     }
 
     private static async Task<IResult> UpdateSubscription(

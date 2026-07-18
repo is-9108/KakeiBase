@@ -1,6 +1,5 @@
 using FluentAssertions;
 using KakeiBase.WebApi.Domain.Entities;
-using KakeiBase.WebApi.Domain.Enums;
 
 namespace KakeiBase.UnitTests.Domain;
 
@@ -26,7 +25,6 @@ public class SubscriptionTests
         transaction.CategoryId.Should().Be(subscription.CategoryId);
         transaction.SubscriptionId.Should().Be(subscription.Id);
         transaction.Amount.Should().Be((int)subscription.Amount);
-        transaction.Type.Should().Be(TransactionType.Expense);
         transaction.Date.Should().Be(date);
         transaction.Memo.Should().Be(subscription.Name);
     }

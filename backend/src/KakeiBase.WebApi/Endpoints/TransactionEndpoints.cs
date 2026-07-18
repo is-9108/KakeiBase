@@ -65,10 +65,12 @@ public static class TransactionEndpoints
             return Results.Unauthorized();
 
         var result = await useCase.ExecuteAsync(
-            userId.Value, request.CategoryId, request.Amount, request.Type,
+            userId.Value, request.CategoryId, request.Amount,
             request.Date, request.Memo, request.ReceiptS3Key, ct);
 
-        return Results.Created($"/api/transactions/{result.Id}", result);
+        return result is null
+            ? Results.NotFound()
+            : Results.Created($"/api/transactions/{result.Id}", result);
     }
 
     private static async Task<IResult> UpdateTransaction(
@@ -88,7 +90,7 @@ public static class TransactionEndpoints
             return Results.Unauthorized();
 
         var result = await useCase.ExecuteAsync(
-            userId.Value, id, request.CategoryId, request.Amount, request.Type,
+            userId.Value, id, request.CategoryId, request.Amount,
             request.Date, request.Memo, request.ReceiptS3Key, ct);
 
         return result.IsNotFound ? Results.NotFound() : Results.Ok(result.Transaction);

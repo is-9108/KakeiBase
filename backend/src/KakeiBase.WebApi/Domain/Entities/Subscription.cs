@@ -57,6 +57,20 @@ public class Subscription
         return Transaction.FromSubscription(this, date);
     }
 
+    /// <summary>定期支出情報を更新する</summary>
+    /// <param name="categoryId">新しいカテゴリのID</param>
+    /// <param name="name">新しい名称</param>
+    /// <param name="amount">新しい金額（円単位）</param>
+    /// <param name="isActive">有効フラグ</param>
+    public void Update(Guid categoryId, string name, int amount, bool isActive)
+    {
+        CategoryId = categoryId;
+        Name = name;
+        Amount = amount;
+        IsActive = isActive;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     /// <summary>定期支出を無効化する</summary>
     public void Deactivate()
     {

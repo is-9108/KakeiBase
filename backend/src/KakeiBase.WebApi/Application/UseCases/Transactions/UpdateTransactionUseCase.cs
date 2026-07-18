@@ -1,6 +1,5 @@
 using KakeiBase.WebApi.Application.DTOs.Transactions;
 using KakeiBase.WebApi.Application.Interfaces;
-using KakeiBase.WebApi.Domain.Enums;
 
 namespace KakeiBase.WebApi.Application.UseCases.Transactions;
 
@@ -19,7 +18,6 @@ public class UpdateTransactionUseCase(ITransactionRepository transactionReposito
     /// <param name="transactionId">更新する収支のID</param>
     /// <param name="categoryId">新しいカテゴリのID</param>
     /// <param name="amount">新しい金額（円単位）</param>
-    /// <param name="type">新しい収支区分</param>
     /// <param name="date">新しい発生日付</param>
     /// <param name="memo">新しいメモ（null で削除）</param>
     /// <param name="receiptS3Key">新しい領収書 S3 キー（null で削除）</param>
@@ -30,7 +28,6 @@ public class UpdateTransactionUseCase(ITransactionRepository transactionReposito
         Guid transactionId,
         Guid categoryId,
         int amount,
-        TransactionType type,
         DateOnly date,
         string? memo,
         string? receiptS3Key,
@@ -40,12 +37,12 @@ public class UpdateTransactionUseCase(ITransactionRepository transactionReposito
         if (transaction is null || transaction.UserId != userId)
             return UpdateTransactionResult.NotFound();
 
-        transaction.Update(categoryId, amount, type, date, memo, receiptS3Key);
+        transaction.Update(categoryId, amount, date, memo, receiptS3Key);
         await transactionRepository.SaveChangesAsync(ct);
 
         return UpdateTransactionResult.Success(new TransactionDto(
             transaction.Id, transaction.CategoryId, transaction.SubscriptionId, transaction.Amount,
-            transaction.Type, transaction.Date, transaction.Memo, transaction.ReceiptS3Key,
+            transaction.Date, transaction.Memo, transaction.ReceiptS3Key,
             transaction.CreatedAt, transaction.UpdatedAt));
     }
 }

@@ -22,11 +22,6 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
             .HasColumnType("integer")
             .IsRequired();
 
-        builder.Property(t => t.Type)
-            .HasColumnName("transaction_type")
-            .HasConversion<string>()
-            .IsRequired();
-
         builder.Property(t => t.Date).HasColumnName("transaction_date").IsRequired();
         builder.Property(t => t.Memo).HasColumnName("memo");
         builder.Property(t => t.ReceiptS3Key).HasColumnName("receipt_s3_key");

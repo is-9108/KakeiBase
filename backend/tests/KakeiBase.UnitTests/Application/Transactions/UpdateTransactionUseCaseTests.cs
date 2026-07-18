@@ -2,7 +2,6 @@ using FluentAssertions;
 using KakeiBase.WebApi.Application.Interfaces;
 using KakeiBase.WebApi.Application.UseCases.Transactions;
 using KakeiBase.WebApi.Domain.Entities;
-using KakeiBase.WebApi.Domain.Enums;
 using NSubstitute;
 
 namespace KakeiBase.UnitTests.Application.Transactions;
@@ -14,7 +13,7 @@ public class UpdateTransactionUseCaseTests
     private UpdateTransactionUseCase CreateSut() => new(_transactionRepository);
 
     private static Transaction CreateTransaction(Guid userId)
-        => Transaction.Create(userId, Guid.NewGuid(), 1000, TransactionType.Expense, new DateOnly(2026, 7, 1));
+        => Transaction.Create(userId, Guid.NewGuid(), 1000, new DateOnly(2026, 7, 1));
 
     [Fact]
     public async Task ExecuteAsync_WithValidUpdate_ReturnsUpdatedDto()
@@ -27,12 +26,11 @@ public class UpdateTransactionUseCaseTests
         _transactionRepository.FindByIdAsync(transaction.Id).Returns(transaction);
 
         var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, transaction.Id, newCategoryId, 2000, TransactionType.Income, newDate, "更新", null);
+        var result = await sut.ExecuteAsync(userId, transaction.Id, newCategoryId, 2000, newDate, "更新", null);
 
         result.IsNotFound.Should().BeFalse();
         result.Transaction.Should().NotBeNull();
         result.Transaction!.Amount.Should().Be(2000);
-        result.Transaction.Type.Should().Be(TransactionType.Income);
         result.Transaction.CategoryId.Should().Be(newCategoryId);
         await _transactionRepository.Received(1).SaveChangesAsync();
     }
@@ -46,7 +44,7 @@ public class UpdateTransactionUseCaseTests
         _transactionRepository.FindByIdAsync(transactionId).Returns((Transaction?)null);
 
         var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, transactionId, Guid.NewGuid(), 1000, TransactionType.Expense, new DateOnly(2026, 7, 1), null, null);
+        var result = await sut.ExecuteAsync(userId, transactionId, Guid.NewGuid(), 1000, new DateOnly(2026, 7, 1), null, null);
 
         result.IsNotFound.Should().BeTrue();
         result.Transaction.Should().BeNull();
@@ -63,7 +61,7 @@ public class UpdateTransactionUseCaseTests
         _transactionRepository.FindByIdAsync(transaction.Id).Returns(transaction);
 
         var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, transaction.Id, Guid.NewGuid(), 1000, TransactionType.Expense, new DateOnly(2026, 7, 1), null, null);
+        var result = await sut.ExecuteAsync(userId, transaction.Id, Guid.NewGuid(), 1000, new DateOnly(2026, 7, 1), null, null);
 
         result.IsNotFound.Should().BeTrue();
         result.Transaction.Should().BeNull();
