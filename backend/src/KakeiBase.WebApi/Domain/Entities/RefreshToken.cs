@@ -3,7 +3,9 @@ namespace KakeiBase.WebApi.Domain.Entities;
 /// <summary>リフレッシュトークンを表すエンティティ</summary>
 public class RefreshToken
 {
+    /// <summary>ID</summary>
     public Guid Id { get; private set; }
+    /// <summary>ユーザーID</summary>
     public Guid UserId { get; private set; }
     /// <summary>ハッシュ化済みトークン文字列。平文は格納しない</summary>
     public string TokenHash { get; private set; } = string.Empty;

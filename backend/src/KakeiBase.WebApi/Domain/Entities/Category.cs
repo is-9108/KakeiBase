@@ -5,8 +5,11 @@ namespace KakeiBase.WebApi.Domain.Entities;
 /// <summary>収支カテゴリを表すエンティティ</summary>
 public class Category
 {
+    /// <summary>カテゴリID</summary>
     public Guid Id { get; private set; }
+    /// <summary>ユーザーID</summary>
     public Guid UserId { get; private set; }
+    /// <summary>カテゴリ名</summary>
     public string Name { get; private set; } = string.Empty;
     /// <summary>このカテゴリが収入用か支出用かを示す区分</summary>
     public TransactionType Type { get; private set; }

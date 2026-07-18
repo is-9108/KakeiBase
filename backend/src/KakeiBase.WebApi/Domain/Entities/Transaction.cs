@@ -5,7 +5,9 @@ namespace KakeiBase.WebApi.Domain.Entities;
 /// <summary>収支の1件を表すエンティティ</summary>
 public class Transaction
 {
+    /// <summary>ID</summary>
     public Guid Id { get; private set; }
+    /// <summary>ユーザーID</summary>
     public Guid UserId { get; private set; }
     /// <summary>収支が属するカテゴリのID</summary>
     public Guid CategoryId { get; private set; }
@@ -16,6 +18,7 @@ public class Transaction
     /// <summary>収入または支出の区分</summary>
     public TransactionType Type { get; private set; }
     public DateOnly Date { get; private set; }
+    /// <summary>メモ</summary>
     public string? Memo { get; private set; }
     /// <summary>領収書画像の S3 オブジェクトキー。未添付の場合は null</summary>
     public string? ReceiptS3Key { get; private set; }

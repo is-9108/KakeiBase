@@ -3,10 +3,13 @@ namespace KakeiBase.WebApi.Domain.Entities;
 /// <summary>定期支出（サブスクリプション）を表すエンティティ</summary>
 public class Subscription
 {
+    /// <summary>サブスクリプションID</summary>
     public Guid Id { get; private set; }
+    /// <summary>ユーザーID</summary>
     public Guid UserId { get; private set; }
     /// <summary>定期支出が属するカテゴリのID</summary>
     public Guid CategoryId { get; private set; }
+    /// <summary>サブスクリプション名</summary>
     public string Name { get; private set; } = string.Empty;
     /// <summary>毎回発生する金額（円単位）</summary>
     public int Amount { get; private set; }
