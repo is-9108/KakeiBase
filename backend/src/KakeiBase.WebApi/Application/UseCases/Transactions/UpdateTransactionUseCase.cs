@@ -12,7 +12,7 @@ public record UpdateTransactionResult(bool IsNotFound, TransactionDto? Transacti
 }
 
 /// <summary>収支情報を更新するユースケース</summary>
-public class UpdateTransactionUseCase(ITransactionRepository transactionRepository)
+public class UpdateTransactionUseCase(ITransactionRepository transactionRepository, ICategoryRepository categoryRepository)
 {
     /// <param name="userId">リクエストユーザーのID</param>
     /// <param name="transactionId">更新する収支のID</param>
@@ -35,6 +35,10 @@ public class UpdateTransactionUseCase(ITransactionRepository transactionReposito
     {
         var transaction = await transactionRepository.FindByIdAsync(transactionId, ct);
         if (transaction is null || transaction.UserId != userId)
+            return UpdateTransactionResult.NotFound();
+
+        var category = await categoryRepository.FindByIdAsync(categoryId, ct);
+        if (category is null || category.UserId != userId)
             return UpdateTransactionResult.NotFound();
 
         transaction.Update(categoryId, amount, date, memo, receiptS3Key);
