@@ -15,7 +15,8 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "types": ["@testing-library/jest-dom"]
   },
   "include": ["src"]
 }
