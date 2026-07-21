@@ -1,0 +1,21 @@
+import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import type { ReactElement } from 'react'
+import App from '../App'
+
+function renderWithProviders(ui: ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+  )
+}
+
+describe('App', () => {
+  it('KakeiBaseの見出しを表示する', () => {
+    renderWithProviders(<App />)
+    expect(screen.getByRole('heading', { name: 'KakeiBase' })).toBeInTheDocument()
+  })
+})
