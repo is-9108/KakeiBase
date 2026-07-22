@@ -5,21 +5,29 @@ export type LoginRequest = {
   password: string
 }
 
-export type UserProfile = {
-  id: string
-  email: string
+export type AuthResponse = {
+  /** アクセストークン(Cookie)の有効期限 (ISO 8601形式) */
+  accessTokenExpiresAt: string
 }
 
 /**
- * ログインする
+ * ログインする。成功時はアクセストークン・リフレッシュトークンが httpOnly Cookie にセットされる
  * @param body メールアドレスとパスワード
- * @returns ログインしたユーザーのプロフィール
+ * @returns アクセストークンの有効期限情報
  */
-export async function login(body: LoginRequest): Promise<UserProfile> {
-  return apiFetch<UserProfile>('/api/auth/login', {
+export async function login(body: LoginRequest): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify(body),
   })
+}
+
+/**
+ * リフレッシュトークン(Cookie)を使ってアクセストークンを更新する
+ * @returns 更新後のアクセストークンの有効期限情報
+ */
+export async function refresh(): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>('/api/auth/refresh', { method: 'POST' })
 }
 
 /**
@@ -27,12 +35,4 @@ export async function login(body: LoginRequest): Promise<UserProfile> {
  */
 export async function logout(): Promise<void> {
   return apiFetch<void>('/api/auth/logout', { method: 'POST' })
-}
-
-/**
- * 現在ログイン中のユーザープロフィールを取得する
- * @returns ログイン中のユーザー情報
- */
-export async function getMe(): Promise<UserProfile> {
-  return apiFetch<UserProfile>('/api/auth/me')
 }
