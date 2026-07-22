@@ -146,6 +146,7 @@ frontend/
 | UI フレームワーク | React 18 |
 | 言語 | TypeScript |
 | ビルドツール | Vite |
+| ルーティング | React Router ([ADR-0011](./adr/0011-client-side-routing-with-react-router.md)) |
 | テスト (ユニット) | Vitest, React Testing Library |
 | テスト (E2E) | Playwright |
 
