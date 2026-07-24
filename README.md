@@ -65,10 +65,21 @@ IaC  : Terraform
 
 ## セットアップ
 
+初回のみ、`backend/src/KakeiBase.WebApi/appsettings.Development.json` をローカルに作成してください(gitignore対象のため各自で用意する運用です)。
+
+```json
+{
+  "Jwt": {
+    "SecretKey": "任意のランダムな文字列(32文字以上推奨)"
+  }
+}
+```
+
 ```bash
 # バックエンド
 cd backend
 dotnet restore
+dotnet ef database update --project src/KakeiBase.WebApi
 dotnet run --project src/KakeiBase.WebApi
 
 # フロントエンド
