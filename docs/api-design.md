@@ -6,7 +6,7 @@
 
 | 環境 | URL |
 |---|---|
-| 開発 | `http://localhost:5000` |
+| 開発 | `http://localhost:5173` (Viteプロキシ経由、実体は `https://localhost:7227`) |
 | 本番 | `https://api.kakeibase.example.com` (CloudFront 経由) |
 
 ### 認証
