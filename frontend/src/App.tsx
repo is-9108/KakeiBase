@@ -1,13 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
-
-function DashboardPage() {
-  return (
-    <div>
-      <h1>KakeiBase</h1>
-    </div>
-  )
-}
+import DashboardPage from './pages/DashboardPage'
 
 function App() {
   return (
