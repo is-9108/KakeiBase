@@ -16,6 +16,7 @@ function Header() {
         <NavLink to="/">ダッシュボード</NavLink>
         <NavLink to="/transactions">収支一覧</NavLink>
         <NavLink to="/categories">カテゴリ管理</NavLink>
+        <NavLink to="/subscriptions">サブスク</NavLink>
         <button type="button" onClick={handleLogout}>
           ログアウト
         </button>
