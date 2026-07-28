@@ -227,13 +227,13 @@ describe('CategoriesPage', () => {
     })
   })
 
-  it('ダッシュボードボタンを押すと/へ遷移する', async () => {
+  it('ダッシュボードリンクを押すと/へ遷移する', async () => {
     mockGetCategories.mockResolvedValue(mockCategories)
 
     renderCategoriesPage()
     await screen.findByText('食費')
 
-    fireEvent.click(screen.getByRole('button', { name: 'ダッシュボード' }))
+    fireEvent.click(screen.getByRole('link', { name: 'ダッシュボード' }))
 
     expect(await screen.findByText('Dashboard')).toBeInTheDocument()
   })

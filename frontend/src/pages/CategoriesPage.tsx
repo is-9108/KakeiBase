@@ -1,12 +1,9 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '../hooks/useCategories'
-import { logout } from '../api/auth'
 import type { Category, CategoryType } from '../api/categories'
+import Header from '../components/Header'
 
 function CategoriesPage() {
-  const navigate = useNavigate()
-
   const [newName, setNewName] = useState('')
   const [newType, setNewType] = useState<CategoryType>('Expense')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -40,11 +37,6 @@ function CategoriesPage() {
     const id = setTimeout(() => setToastMessage(null), 3000)
     return () => clearTimeout(id)
   }, [toastMessage])
-
-  async function handleLogout() {
-    await logout().catch(() => {})
-    navigate('/login', { replace: true })
-  }
 
   function handleCreate(e: FormEvent) {
     e.preventDefault()
@@ -89,17 +81,7 @@ function CategoriesPage() {
 
   return (
     <div>
-      <header>
-        <h1>KakeiBase</h1>
-        <nav>
-          <button type="button" onClick={() => navigate('/')}>
-            ダッシュボード
-          </button>
-          <button type="button" onClick={handleLogout}>
-            ログアウト
-          </button>
-        </nav>
-      </header>
+      <Header />
 
       <h2>カテゴリ管理</h2>
 
