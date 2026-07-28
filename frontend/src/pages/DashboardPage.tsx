@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts'
-import { logout } from '../api/auth'
 import { useDashboardSummary } from '../hooks/useDashboardSummary'
+import Header from '../components/Header'
 
 const PIE_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
 function DashboardPage() {
-  const navigate = useNavigate()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
@@ -24,11 +22,6 @@ function DashboardPage() {
     const id = setTimeout(() => setToastMessage(null), 3000)
     return () => clearTimeout(id)
   }, [toastMessage])
-
-  async function handleLogout() {
-    await logout().catch(() => {})
-    navigate('/login', { replace: true })
-  }
 
   function goToPrevMonth() {
     if (month === 1) {
@@ -50,14 +43,7 @@ function DashboardPage() {
 
   return (
     <div>
-      <header>
-        <h1>KakeiBase</h1>
-        <nav>
-          <button type="button" onClick={handleLogout}>
-            ログアウト
-          </button>
-        </nav>
-      </header>
+      <Header />
 
       <div>
         <button type="button" onClick={goToPrevMonth}>
