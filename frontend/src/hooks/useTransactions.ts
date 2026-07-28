@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
 import {
   getTransactions,
   createTransaction,
@@ -7,8 +6,7 @@ import {
   deleteTransaction,
   type TransactionBody,
 } from '../api/transactions'
-import { refresh } from '../api/auth'
-import { ApiError } from '../api/client'
+import { useAuthRetry } from './useAuthRetry'
 
 const QUERY_KEY = 'transactions' as const
 
@@ -19,25 +17,10 @@ const QUERY_KEY = 'transactions' as const
  * @param month 対象月
  */
 export function useTransactions(year: number, month: number) {
-  const navigate = useNavigate()
+  const withAuthRetry = useAuthRetry()
   return useQuery({
     queryKey: [QUERY_KEY, year, month],
-    queryFn: async () => {
-      try {
-        return await getTransactions(year, month)
-      } catch (e) {
-        if (e instanceof ApiError && e.status === 401) {
-          try {
-            await refresh()
-            return await getTransactions(year, month)
-          } catch {
-            navigate('/login', { replace: true })
-            throw e
-          }
-        }
-        throw e
-      }
-    },
+    queryFn: () => withAuthRetry(() => getTransactions(year, month)),
     retry: false,
   })
 }
