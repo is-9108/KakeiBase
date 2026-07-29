@@ -69,4 +69,20 @@ public class UpdateCategoryUseCaseTests
         result.IsConflict.Should().BeTrue();
         await _categoryRepository.DidNotReceive().SaveChangesAsync();
     }
+
+    [Fact]
+    public async Task ExecuteAsync_WithSystemCategory_ReturnsNotFound()
+    {
+        var userId = Guid.NewGuid();
+        var systemCategory = Category.CreateSystem(userId, "サブスク", TransactionType.Expense);
+
+        _categoryRepository.FindByIdAsync(systemCategory.Id).Returns(systemCategory);
+
+        var sut = CreateSut();
+        var result = await sut.ExecuteAsync(userId, systemCategory.Id, "サブスク", TransactionType.Expense);
+
+        result.Category.Should().BeNull();
+        result.IsConflict.Should().BeFalse();
+        await _categoryRepository.DidNotReceive().SaveChangesAsync();
+    }
 }

@@ -59,4 +59,19 @@ public class DeleteCategoryUseCaseTests
         result.Should().BeFalse();
         await _categoryRepository.DidNotReceive().DeleteAsync(Arg.Any<Category>());
     }
+
+    [Fact]
+    public async Task ExecuteAsync_WithSystemCategory_ReturnsFalse()
+    {
+        var userId = Guid.NewGuid();
+        var systemCategory = Category.CreateSystem(userId, "サブスク", TransactionType.Expense);
+
+        _categoryRepository.FindByIdAsync(systemCategory.Id).Returns(systemCategory);
+
+        var sut = CreateSut();
+        var result = await sut.ExecuteAsync(userId, systemCategory.Id);
+
+        result.Should().BeFalse();
+        await _categoryRepository.DidNotReceive().DeleteAsync(Arg.Any<Category>());
+    }
 }

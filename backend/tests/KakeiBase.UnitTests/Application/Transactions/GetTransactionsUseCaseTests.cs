@@ -2,6 +2,7 @@ using FluentAssertions;
 using KakeiBase.WebApi.Application.Interfaces;
 using KakeiBase.WebApi.Application.UseCases.Transactions;
 using KakeiBase.WebApi.Domain.Entities;
+using KakeiBase.WebApi.Domain.Enums;
 using NSubstitute;
 
 namespace KakeiBase.UnitTests.Application.Transactions;
@@ -12,14 +13,26 @@ public class GetTransactionsUseCaseTests
 
     private GetTransactionsUseCase CreateSut() => new(_transactionRepository);
 
+    /// <summary>
+    /// Category ナビゲーションプロパティを設定したテスト用 Transaction を生成する。
+    /// 本番では EF Core の Include がリフレクション経由でセットするため、ここでも同様に再現する。
+    /// </summary>
+    private static Transaction CreateTransactionWithCategory(Guid userId, string categoryName = "食費")
+    {
+        var category = Category.Create(userId, categoryName, TransactionType.Expense);
+        var tx = Transaction.Create(userId, category.Id, 1000, new DateOnly(2026, 7, 1));
+        typeof(Transaction).GetProperty(nameof(Transaction.Category))!.SetValue(tx, category);
+        return tx;
+    }
+
     [Fact]
     public async Task ExecuteAsync_WithNoFilter_ReturnsAllTransactions()
     {
         var userId = Guid.NewGuid();
         var transactions = new List<Transaction>
         {
-            Transaction.Create(userId, Guid.NewGuid(), 1000, new DateOnly(2026, 7, 1)),
-            Transaction.Create(userId, Guid.NewGuid(), 2000, new DateOnly(2026, 6, 15)),
+            CreateTransactionWithCategory(userId, "食費"),
+            CreateTransactionWithCategory(userId, "交通費"),
         };
 
         _transactionRepository
@@ -38,7 +51,7 @@ public class GetTransactionsUseCaseTests
         var userId = Guid.NewGuid();
         var transactions = new List<Transaction>
         {
-            Transaction.Create(userId, Guid.NewGuid(), 1000, new DateOnly(2026, 7, 1)),
+            CreateTransactionWithCategory(userId),
         };
 
         _transactionRepository
