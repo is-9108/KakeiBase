@@ -18,15 +18,14 @@ public class CreateSubscriptionUseCaseTests
     public async Task ExecuteAsync_WithValidInput_ReturnsSubscriptionDto()
     {
         var userId = Guid.NewGuid();
-        var categoryId = Guid.NewGuid();
-        var category = Category.Create(userId, "サブスク", TransactionType.Expense);
-        _categoryRepository.FindByIdAsync(categoryId).Returns(category);
+        var systemCategory = Category.CreateSystem(userId, "サブスク", TransactionType.Expense);
+        _categoryRepository.FindSystemSubscriptionCategoryByUserIdAsync(userId).Returns(systemCategory);
 
         var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, categoryId, "Netflix", 1490);
+        var result = await sut.ExecuteAsync(userId, "Netflix", 1490);
 
         result.Should().NotBeNull();
-        result!.CategoryId.Should().Be(categoryId);
+        result!.CategoryId.Should().Be(systemCategory.Id);
         result.Name.Should().Be("Netflix");
         result.Amount.Should().Be(1490);
         result.IsActive.Should().BeTrue();
@@ -35,30 +34,13 @@ public class CreateSubscriptionUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_CategoryNotFound_ReturnsNull()
+    public async Task ExecuteAsync_SystemCategoryNotFound_ReturnsNull()
     {
         var userId = Guid.NewGuid();
-        var categoryId = Guid.NewGuid();
-        _categoryRepository.FindByIdAsync(categoryId).Returns((Category?)null);
+        _categoryRepository.FindSystemSubscriptionCategoryByUserIdAsync(userId).Returns((Category?)null);
 
         var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, categoryId, "Netflix", 1490);
-
-        result.Should().BeNull();
-        await _subscriptionRepository.DidNotReceive().AddAsync(Arg.Any<Subscription>());
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_CategoryOwnedByOtherUser_ReturnsNull()
-    {
-        var userId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
-        var categoryId = Guid.NewGuid();
-        var category = Category.Create(otherUserId, "他ユーザーのカテゴリ", TransactionType.Expense);
-        _categoryRepository.FindByIdAsync(categoryId).Returns(category);
-
-        var sut = CreateSut();
-        var result = await sut.ExecuteAsync(userId, categoryId, "Netflix", 1490);
+        var result = await sut.ExecuteAsync(userId, "Netflix", 1490);
 
         result.Should().BeNull();
         await _subscriptionRepository.DidNotReceive().AddAsync(Arg.Any<Subscription>());

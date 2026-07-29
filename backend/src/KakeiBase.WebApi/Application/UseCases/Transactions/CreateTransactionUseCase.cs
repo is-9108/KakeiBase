@@ -14,7 +14,7 @@ public class CreateTransactionUseCase(ITransactionRepository transactionReposito
     /// <param name="memo">メモ（省略可）</param>
     /// <param name="receiptS3Key">領収書画像の S3 オブジェクトキー（省略可）</param>
     /// <param name="ct">キャンセルトークン</param>
-    /// <returns>作成された収支。カテゴリが存在しないまたは所有者が異なる場合は null</returns>
+    /// <returns>作成された収支。カテゴリが存在しない・所有者が異なる・システムカテゴリの場合は null</returns>
     public async Task<TransactionDto?> ExecuteAsync(
         Guid userId,
         Guid categoryId,
@@ -25,7 +25,8 @@ public class CreateTransactionUseCase(ITransactionRepository transactionReposito
         CancellationToken ct = default)
     {
         var category = await categoryRepository.FindByIdAsync(categoryId, ct);
-        if (category is null || category.UserId != userId)
+        // システムカテゴリはユーザーが手動で収支に紐づけることを禁止する
+        if (category is null || category.UserId != userId || category.IsSystem)
             return null;
 
         var transaction = Transaction.Create(userId, categoryId, amount, date, memo, receiptS3Key);
@@ -33,8 +34,8 @@ public class CreateTransactionUseCase(ITransactionRepository transactionReposito
         await transactionRepository.SaveChangesAsync(ct);
 
         return new TransactionDto(
-            transaction.Id, transaction.CategoryId, transaction.SubscriptionId, transaction.Amount,
-            transaction.Date, transaction.Memo, transaction.ReceiptS3Key,
+            transaction.Id, transaction.CategoryId, category.Name, transaction.SubscriptionId,
+            transaction.Amount, transaction.Date, transaction.Memo, transaction.ReceiptS3Key,
             transaction.CreatedAt, transaction.UpdatedAt);
     }
 }

@@ -31,6 +31,7 @@ const mockTransactions: Transaction[] = [
   {
     id: 'tx-1',
     categoryId: 'cat-1',
+    categoryName: '食費',
     subscriptionId: null,
     amount: 3000,
     date: '2026-07-10',
@@ -42,6 +43,7 @@ const mockTransactions: Transaction[] = [
   {
     id: 'tx-2',
     categoryId: 'cat-2',
+    categoryName: '給与',
     subscriptionId: null,
     amount: 200000,
     date: '2026-07-25',
@@ -268,6 +270,7 @@ describe('TransactionsPage', () => {
     const newTx: Transaction = {
       id: 'tx-3',
       categoryId: 'cat-1',
+      categoryName: '食費',
       subscriptionId: null,
       amount: 500,
       date: '2026-07-15',

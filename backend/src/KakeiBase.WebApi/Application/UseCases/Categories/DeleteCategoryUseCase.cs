@@ -12,7 +12,8 @@ public class DeleteCategoryUseCase(ICategoryRepository categoryRepository)
     public async Task<bool> ExecuteAsync(Guid userId, Guid categoryId, CancellationToken ct = default)
     {
         var category = await categoryRepository.FindByIdAsync(categoryId, ct);
-        if (category is null || category.UserId != userId)
+        // システムカテゴリはユーザーが削除できない
+        if (category is null || category.UserId != userId || category.IsSystem)
             return false;
 
         await categoryRepository.DeleteAsync(category, ct);

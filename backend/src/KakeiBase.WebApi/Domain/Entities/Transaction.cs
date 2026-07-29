@@ -9,6 +9,8 @@ public class Transaction
     public Guid UserId { get; private set; }
     /// <summary>収支が属するカテゴリのID</summary>
     public Guid CategoryId { get; private set; }
+    /// <summary>収支が属するカテゴリ</summary>
+    public Category? Category { get; private set; }
     /// <summary>定期支出から自動生成された場合の元サブスクリプションID。手動登録の場合は null</summary>
     public Guid? SubscriptionId { get; private set; }
     /// <summary>金額（円単位）</summary>

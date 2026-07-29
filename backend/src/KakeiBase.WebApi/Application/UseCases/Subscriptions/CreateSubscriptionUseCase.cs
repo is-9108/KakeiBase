@@ -6,19 +6,18 @@ namespace KakeiBase.WebApi.Application.UseCases.Subscriptions;
 
 public class CreateSubscriptionUseCase(ISubscriptionRepository subscriptionRepository, ICategoryRepository categoryRepository)
 {
-    /// <returns>作成されたサブスクリプション。カテゴリが存在しないまたは所有者が異なる場合は null</returns>
+    /// <returns>作成されたサブスクリプション。システムカテゴリが未設定の場合は null</returns>
     public async Task<SubscriptionDto?> ExecuteAsync(
         Guid userId,
-        Guid categoryId,
         string name,
         int amount,
         CancellationToken ct = default)
     {
-        var category = await categoryRepository.FindByIdAsync(categoryId, ct);
-        if (category is null || category.UserId != userId)
+        var systemCategory = await categoryRepository.FindSystemSubscriptionCategoryByUserIdAsync(userId, ct);
+        if (systemCategory is null)
             return null;
 
-        var subscription = Subscription.Create(userId, categoryId, name, amount);
+        var subscription = Subscription.Create(userId, systemCategory.Id, name, amount);
         await subscriptionRepository.AddAsync(subscription, ct);
         await subscriptionRepository.SaveChangesAsync(ct);
 

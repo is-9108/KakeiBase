@@ -9,12 +9,11 @@ public record UpdateSubscriptionResult(bool IsNotFound, SubscriptionDto? Subscri
     public static UpdateSubscriptionResult Success(SubscriptionDto dto) => new(false, dto);
 }
 
-public class UpdateSubscriptionUseCase(ISubscriptionRepository subscriptionRepository, ICategoryRepository categoryRepository)
+public class UpdateSubscriptionUseCase(ISubscriptionRepository subscriptionRepository)
 {
     public async Task<UpdateSubscriptionResult> ExecuteAsync(
         Guid userId,
         Guid subscriptionId,
-        Guid categoryId,
         string name,
         int amount,
         bool isActive,
@@ -24,11 +23,8 @@ public class UpdateSubscriptionUseCase(ISubscriptionRepository subscriptionRepos
         if (subscription is null || subscription.UserId != userId)
             return UpdateSubscriptionResult.NotFound();
 
-        var category = await categoryRepository.FindByIdAsync(categoryId, ct);
-        if (category is null || category.UserId != userId)
-            return UpdateSubscriptionResult.NotFound();
-
-        subscription.Update(categoryId, name, amount, isActive);
+        // カテゴリはシステム管理のため変更不可。既存の CategoryId をそのまま維持する
+        subscription.Update(subscription.CategoryId, name, amount, isActive);
         await subscriptionRepository.SaveChangesAsync(ct);
 
         return UpdateSubscriptionResult.Success(new SubscriptionDto(

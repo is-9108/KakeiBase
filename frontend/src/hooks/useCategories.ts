@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
 import {
   getCategories,
   createCategory,
@@ -7,8 +6,7 @@ import {
   deleteCategory,
   type CategoryBody,
 } from '../api/categories'
-import { refresh } from '../api/auth'
-import { ApiError } from '../api/client'
+import { useAuthRetry } from './useAuthRetry'
 
 const QUERY_KEY = ['categories'] as const
 
@@ -17,25 +15,10 @@ const QUERY_KEY = ['categories'] as const
  * 401 エラー時はトークンリフレッシュを試み、失敗した場合は /login へリダイレクトする。
  */
 export function useCategories() {
-  const navigate = useNavigate()
+  const withAuthRetry = useAuthRetry()
   return useQuery({
     queryKey: QUERY_KEY,
-    queryFn: async () => {
-      try {
-        return await getCategories()
-      } catch (e) {
-        if (e instanceof ApiError && e.status === 401) {
-          try {
-            await refresh()
-            return await getCategories()
-          } catch {
-            navigate('/login', { replace: true })
-            throw e
-          }
-        }
-        throw e
-      }
-    },
+    queryFn: () => withAuthRetry(getCategories),
     retry: false,
   })
 }

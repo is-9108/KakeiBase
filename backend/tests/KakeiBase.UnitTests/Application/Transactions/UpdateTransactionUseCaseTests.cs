@@ -109,4 +109,23 @@ public class UpdateTransactionUseCaseTests
         result.Transaction.Should().BeNull();
         await _transactionRepository.DidNotReceive().SaveChangesAsync();
     }
+
+    [Fact]
+    public async Task ExecuteAsync_SystemCategory_ReturnsNotFound()
+    {
+        var userId = Guid.NewGuid();
+        var transaction = CreateTransaction(userId);
+        var categoryId = Guid.NewGuid();
+        var systemCategory = Category.CreateSystem(userId, "サブスク", TransactionType.Expense);
+
+        _transactionRepository.FindByIdAsync(transaction.Id).Returns(transaction);
+        _categoryRepository.FindByIdAsync(categoryId).Returns(systemCategory);
+
+        var sut = CreateSut();
+        var result = await sut.ExecuteAsync(userId, transaction.Id, categoryId, 1000, new DateOnly(2026, 7, 1), null, null);
+
+        result.IsNotFound.Should().BeTrue();
+        result.Transaction.Should().BeNull();
+        await _transactionRepository.DidNotReceive().SaveChangesAsync();
+    }
 }

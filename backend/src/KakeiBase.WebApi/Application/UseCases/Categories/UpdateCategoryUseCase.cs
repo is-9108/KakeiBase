@@ -26,7 +26,8 @@ public class UpdateCategoryUseCase(ICategoryRepository categoryRepository)
     public async Task<UpdateCategoryResult> ExecuteAsync(Guid userId, Guid categoryId, string name, TransactionType type, CancellationToken ct = default)
     {
         var category = await categoryRepository.FindByIdAsync(categoryId, ct);
-        if (category is null || category.UserId != userId)
+        // システムカテゴリはユーザーが更新できない
+        if (category is null || category.UserId != userId || category.IsSystem)
             return UpdateCategoryResult.NotFound();
 
         var exists = await categoryRepository.ExistsByUserIdAndNameAndTypeAsync(userId, name, type, excludeId: categoryId, ct: ct);

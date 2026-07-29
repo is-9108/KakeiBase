@@ -62,7 +62,7 @@ public static class SubscriptionEndpoints
         if (userId is null)
             return Results.Unauthorized();
 
-        var result = await useCase.ExecuteAsync(userId.Value, request.CategoryId, request.Name, request.Amount, ct);
+        var result = await useCase.ExecuteAsync(userId.Value, request.Name, request.Amount, ct);
         return result is null
             ? Results.NotFound()
             : Results.Created($"/api/subscriptions/{result.Id}", result);
@@ -85,7 +85,7 @@ public static class SubscriptionEndpoints
             return Results.Unauthorized();
 
         var result = await useCase.ExecuteAsync(
-            userId.Value, id, request.CategoryId, request.Name, request.Amount, request.IsActive, ct);
+            userId.Value, id, request.Name, request.Amount, request.IsActive, ct);
 
         return result.IsNotFound ? Results.NotFound() : Results.Ok(result.Subscription);
     }

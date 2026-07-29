@@ -80,4 +80,20 @@ public class CreateTransactionUseCaseTests
         result.Should().BeNull();
         await _transactionRepository.DidNotReceive().AddAsync(Arg.Any<Transaction>());
     }
+
+    [Fact]
+    public async Task ExecuteAsync_SystemCategory_ReturnsNull()
+    {
+        var userId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var date = new DateOnly(2026, 7, 15);
+        var systemCategory = Category.CreateSystem(userId, "サブスク", TransactionType.Expense);
+        _categoryRepository.FindByIdAsync(categoryId).Returns(systemCategory);
+
+        var sut = CreateSut();
+        var result = await sut.ExecuteAsync(userId, categoryId, 1000, date, null, null);
+
+        result.Should().BeNull();
+        await _transactionRepository.DidNotReceive().AddAsync(Arg.Any<Transaction>());
+    }
 }

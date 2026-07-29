@@ -11,12 +11,16 @@ public class CategoryRepository(KakeiBaseDbContext dbContext) : ICategoryReposit
         => dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id, ct);
 
     public Task<List<Category>> FindAllByUserIdAsync(Guid userId, CancellationToken ct = default)
-        => dbContext.Categories.Where(c => c.UserId == userId).ToListAsync(ct);
+        => dbContext.Categories.Where(c => c.UserId == userId && !c.IsSystem).ToListAsync(ct);
+
+    public Task<Category?> FindSystemSubscriptionCategoryByUserIdAsync(Guid userId, CancellationToken ct = default)
+        => dbContext.Categories.Where(c => c.UserId == userId && c.IsSystem).FirstOrDefaultAsync(ct);
 
     public Task<bool> ExistsByUserIdAndNameAndTypeAsync(Guid userId, string name, TransactionType type, Guid? excludeId = null, CancellationToken ct = default)
         => dbContext.Categories
+            // システムカテゴリはユーザーが管理するカテゴリと名前空間を共有しないため除外する
             // excludeId がある場合は自身を除外してチェック
-            .Where(c => c.UserId == userId && c.Name == name && c.Type == type && (excludeId == null || c.Id != excludeId))
+            .Where(c => c.UserId == userId && c.Name == name && c.Type == type && !c.IsSystem && (excludeId == null || c.Id != excludeId))
             .AnyAsync(ct);
 
     public async Task AddAsync(Category category, CancellationToken ct = default)

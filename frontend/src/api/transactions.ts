@@ -3,6 +3,7 @@ import { apiFetch } from './client'
 export type Transaction = {
   id: string
   categoryId: string
+  categoryName: string
   subscriptionId: string | null
   /** 金額（円、正の整数） */
   amount: number
