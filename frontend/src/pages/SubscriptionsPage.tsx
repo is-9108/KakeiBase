@@ -5,7 +5,6 @@ import {
   useUpdateSubscription,
   useDeleteSubscription,
 } from '../hooks/useSubscriptions'
-import { useCategories } from '../hooks/useCategories'
 import type { Subscription } from '../api/subscriptions'
 import Header from '../components/Header'
 
@@ -15,14 +14,12 @@ function SubscriptionsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
 
   // フォーム(モーダル内共有)
-  const [formCategoryId, setFormCategoryId] = useState('')
   const [formName, setFormName] = useState('')
   const [formAmount, setFormAmount] = useState('')
 
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const { data: subscriptions, isLoading, isError } = useSubscriptions()
-  const { data: categories } = useCategories()
   const createMutation = useCreateSubscription()
   const updateMutation = useUpdateSubscription()
   const deleteMutation = useDeleteSubscription()
@@ -52,7 +49,6 @@ function SubscriptionsPage() {
   function openCreateModal() {
     setModalMode('create')
     setEditingId(null)
-    setFormCategoryId('')
     setFormName('')
     setFormAmount('')
   }
@@ -60,7 +56,6 @@ function SubscriptionsPage() {
   function openEditModal(sub: Subscription) {
     setModalMode('edit')
     setEditingId(sub.id)
-    setFormCategoryId(sub.categoryId)
     setFormName(sub.name)
     setFormAmount(String(sub.amount))
   }
@@ -72,11 +67,11 @@ function SubscriptionsPage() {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!formCategoryId || !formName || !formAmount) return
+    if (!formName || !formAmount) return
 
     if (modalMode === 'create') {
       createMutation.mutate(
-        { categoryId: formCategoryId, name: formName, amount: Number(formAmount) },
+        { name: formName, amount: Number(formAmount) },
         {
           onSuccess: () => {
             closeModal()
@@ -91,7 +86,6 @@ function SubscriptionsPage() {
         {
           id: editingId,
           body: {
-            categoryId: formCategoryId,
             name: formName,
             amount: Number(formAmount),
             isActive: target.isActive,
@@ -111,7 +105,7 @@ function SubscriptionsPage() {
     updateMutation.mutate(
       {
         id: sub.id,
-        body: { categoryId: sub.categoryId, name: sub.name, amount: sub.amount, isActive: !sub.isActive },
+        body: { name: sub.name, amount: sub.amount, isActive: !sub.isActive },
       },
       {
         onSuccess: () => setToastMessage(sub.isActive ? 'サブスクを停止しました' : 'サブスクを再開しました'),
@@ -128,16 +122,6 @@ function SubscriptionsPage() {
 
   const active = (subscriptions ?? []).filter((s) => s.isActive)
   const inactive = (subscriptions ?? []).filter((s) => !s.isActive)
-
-  // フォームのカテゴリドロップダウン用(サブスクは定期支出なので支出カテゴリのみ。
-  // ただし編集中サブスクの現在のカテゴリが後から他種別に変更されている場合でも選択肢から消えないようにする)
-  const formCategories = (categories ?? []).filter(
-    (c) => c.type === 'Expense' || c.id === formCategoryId,
-  )
-
-  function categoryName(categoryId: string) {
-    return categories?.find((c) => c.id === categoryId)?.name ?? '—'
-  }
 
   return (
     <div>
@@ -164,7 +148,6 @@ function SubscriptionsPage() {
             <thead>
               <tr>
                 <th>サービス名</th>
-                <th>カテゴリ</th>
                 <th>金額</th>
                 <th>操作</th>
               </tr>
@@ -172,13 +155,12 @@ function SubscriptionsPage() {
             <tbody>
               {active.length === 0 ? (
                 <tr>
-                  <td colSpan={4}>有効なサブスクはありません</td>
+                  <td colSpan={3}>有効なサブスクはありません</td>
                 </tr>
               ) : (
                 active.map((sub) => (
                   <tr key={sub.id}>
                     <td>{sub.name}</td>
-                    <td>{categoryName(sub.categoryId)}</td>
                     <td>¥{sub.amount.toLocaleString()}</td>
                     <td>
                       <button
@@ -203,7 +185,6 @@ function SubscriptionsPage() {
             <thead>
               <tr>
                 <th>サービス名</th>
-                <th>カテゴリ</th>
                 <th>金額</th>
                 <th>操作</th>
               </tr>
@@ -211,13 +192,12 @@ function SubscriptionsPage() {
             <tbody>
               {inactive.length === 0 ? (
                 <tr>
-                  <td colSpan={4}>停止中のサブスクはありません</td>
+                  <td colSpan={3}>停止中のサブスクはありません</td>
                 </tr>
               ) : (
                 inactive.map((sub) => (
                   <tr key={sub.id}>
                     <td>{sub.name}</td>
-                    <td>{categoryName(sub.categoryId)}</td>
                     <td>¥{sub.amount.toLocaleString()}</td>
                     <td>
                       <button
@@ -253,22 +233,6 @@ function SubscriptionsPage() {
           <div style={{ background: '#fff', margin: '10vh auto', padding: '2rem', maxWidth: '400px' }}>
             <h3>{modalMode === 'create' ? 'サブスク追加' : 'サブスク編集'}</h3>
             <form onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="form-category">カテゴリ</label>
-                <select
-                  id="form-category"
-                  value={formCategoryId}
-                  onChange={(e) => setFormCategoryId(e.target.value)}
-                  required
-                >
-                  <option value="">選択してください</option>
-                  {formCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
               <div>
                 <label htmlFor="form-name">サービス名</label>
                 <input

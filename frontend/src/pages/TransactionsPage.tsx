@@ -238,7 +238,7 @@ function TransactionsPage() {
                 return (
                   <tr key={tx.id}>
                     <td>{tx.date}</td>
-                    <td>{cat?.name ?? '—'}</td>
+                    <td>{tx.categoryName}</td>
                     <td>{tx.memo ?? '—'}</td>
                     <td>{amountDisplay}</td>
                     <td>

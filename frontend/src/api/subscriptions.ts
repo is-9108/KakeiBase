@@ -15,7 +15,6 @@ export type Subscription = {
 }
 
 export type SubscriptionBody = {
-  categoryId: string
   name: string
   amount: number
 }
@@ -34,7 +33,7 @@ export function getSubscriptions(): Promise<Subscription[]> {
 
 /**
  * サブスクを新規作成する
- * @param body カテゴリ・サービス名・金額
+ * @param body サービス名・金額
  * @returns 作成されたサブスク
  */
 export function createSubscription(body: SubscriptionBody): Promise<Subscription> {
@@ -47,7 +46,7 @@ export function createSubscription(body: SubscriptionBody): Promise<Subscription
 /**
  * サブスクを更新する(停止/再開もこの関数で isActive を切り替えて行う)
  * @param id 更新対象のサブスクID
- * @param body 新しいカテゴリ・サービス名・金額・有効フラグ
+ * @param body 新しいサービス名・金額・有効フラグ
  * @returns 更新後のサブスク
  */
 export function updateSubscription(id: string, body: SubscriptionUpdateBody): Promise<Subscription> {
