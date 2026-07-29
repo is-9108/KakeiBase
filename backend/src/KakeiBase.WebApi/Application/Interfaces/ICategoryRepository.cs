@@ -22,6 +22,11 @@ public interface ICategoryRepository
     /// <returns>重複するカテゴリが存在する場合は true</returns>
     Task<bool> ExistsByUserIdAndNameAndTypeAsync(Guid userId, string name, TransactionType type, Guid? excludeId = null, CancellationToken ct = default);
 
+    /// <summary>指定ユーザーのサブスク用システムカテゴリを取得する</summary>
+    /// <param name="userId">取得対象ユーザーのID</param>
+    /// <returns>システムカテゴリ。存在しない場合は null</returns>
+    Task<Category?> FindSystemSubscriptionCategoryByUserIdAsync(Guid userId, CancellationToken ct = default);
+
     /// <summary>カテゴリをコンテキストに追加する</summary>
     Task AddAsync(Category category, CancellationToken ct = default);
 

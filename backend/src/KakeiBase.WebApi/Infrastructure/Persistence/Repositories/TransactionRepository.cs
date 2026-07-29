@@ -7,7 +7,9 @@ namespace KakeiBase.WebApi.Infrastructure.Persistence.Repositories;
 public class TransactionRepository(KakeiBaseDbContext dbContext) : ITransactionRepository
 {
     public Task<Transaction?> FindByIdAsync(Guid id, CancellationToken ct = default)
-        => dbContext.Transactions.FirstOrDefaultAsync(t => t.Id == id, ct);
+        => dbContext.Transactions
+            .Include(t => t.Category)
+            .FirstOrDefaultAsync(t => t.Id == id, ct);
 
     public Task<List<Transaction>> FindAllByUserIdAsync(
         Guid userId,
@@ -16,7 +18,9 @@ public class TransactionRepository(KakeiBaseDbContext dbContext) : ITransactionR
         Guid? categoryId,
         CancellationToken ct = default)
     {
-        var query = dbContext.Transactions.Where(t => t.UserId == userId);
+        var query = dbContext.Transactions
+            .Include(t => t.Category)
+            .Where(t => t.UserId == userId);
 
         // null の場合は全年を対象とする
         if (year.HasValue)

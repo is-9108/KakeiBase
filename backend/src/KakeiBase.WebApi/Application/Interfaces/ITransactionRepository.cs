@@ -6,7 +6,10 @@ namespace KakeiBase.WebApi.Application.Interfaces;
 public interface ITransactionRepository
 {
     /// <summary>指定 ID の収支を取得する</summary>
-    /// <returns>指定 ID の収支。存在しない場合は null</returns>
+    /// <returns>
+    /// 指定 ID の収支。存在しない場合は null。
+    /// 返却される Transaction は Category ナビゲーションプロパティがロード済みであることを保証する。
+    /// </returns>
     Task<Transaction?> FindByIdAsync(Guid id, CancellationToken ct = default);
 
     /// <summary>指定ユーザーの収支一覧を取得する</summary>
@@ -15,6 +18,7 @@ public interface ITransactionRepository
     /// <param name="month">絞り込む月（1–12）。null の場合は全月を対象とする</param>
     /// <param name="categoryId">絞り込むカテゴリID。null の場合は全カテゴリを対象とする</param>
     /// <param name="ct">キャンセルトークン</param>
+    /// <returns>返却される各 Transaction は Category ナビゲーションプロパティがロード済みであることを保証する。</returns>
     Task<List<Transaction>> FindAllByUserIdAsync(Guid userId, int? year, int? month, Guid? categoryId, CancellationToken ct = default);
 
     /// <summary>収支をコンテキストに追加する</summary>

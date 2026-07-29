@@ -22,7 +22,7 @@ public class UpdateTransactionUseCase(ITransactionRepository transactionReposito
     /// <param name="memo">新しいメモ（null で削除）</param>
     /// <param name="receiptS3Key">新しい領収書 S3 キー（null で削除）</param>
     /// <param name="ct">キャンセルトークン</param>
-    /// <returns>更新結果。IsNotFound は未存在または別ユーザーのリソースを示す</returns>
+    /// <returns>更新結果。IsNotFound は未存在・別ユーザーのリソース・システムカテゴリ指定を示す</returns>
     public async Task<UpdateTransactionResult> ExecuteAsync(
         Guid userId,
         Guid transactionId,
@@ -38,15 +38,16 @@ public class UpdateTransactionUseCase(ITransactionRepository transactionReposito
             return UpdateTransactionResult.NotFound();
 
         var category = await categoryRepository.FindByIdAsync(categoryId, ct);
-        if (category is null || category.UserId != userId)
+        // システムカテゴリはユーザーが手動で収支に紐づけることを禁止する
+        if (category is null || category.UserId != userId || category.IsSystem)
             return UpdateTransactionResult.NotFound();
 
         transaction.Update(categoryId, amount, date, memo, receiptS3Key);
         await transactionRepository.SaveChangesAsync(ct);
 
         return UpdateTransactionResult.Success(new TransactionDto(
-            transaction.Id, transaction.CategoryId, transaction.SubscriptionId, transaction.Amount,
-            transaction.Date, transaction.Memo, transaction.ReceiptS3Key,
+            transaction.Id, transaction.CategoryId, category.Name, transaction.SubscriptionId,
+            transaction.Amount, transaction.Date, transaction.Memo, transaction.ReceiptS3Key,
             transaction.CreatedAt, transaction.UpdatedAt));
     }
 }

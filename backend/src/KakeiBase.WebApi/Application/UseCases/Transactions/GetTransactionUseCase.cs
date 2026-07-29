@@ -17,8 +17,8 @@ public class GetTransactionUseCase(ITransactionRepository transactionRepository)
             return null;
 
         return new TransactionDto(
-            transaction.Id, transaction.CategoryId, transaction.SubscriptionId, transaction.Amount,
-            transaction.Date, transaction.Memo, transaction.ReceiptS3Key,
+            transaction.Id, transaction.CategoryId, transaction.Category!.Name, transaction.SubscriptionId,
+            transaction.Amount, transaction.Date, transaction.Memo, transaction.ReceiptS3Key,
             transaction.CreatedAt, transaction.UpdatedAt);
     }
 }

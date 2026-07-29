@@ -28,7 +28,15 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 
         builder.Property(c => c.CreatedAt).HasColumnName("created_at");
 
-        builder.HasIndex(c => new { c.UserId, c.Name, c.Type }).IsUnique();
+        builder.Property(c => c.IsSystem)
+            .HasColumnName("is_system")
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        // システムカテゴリとユーザーカテゴリで名前空間を分離するため、is_system = false のみを対象に一意制約を設ける
+        builder.HasIndex(c => new { c.UserId, c.Name, c.Type })
+            .IsUnique()
+            .HasFilter("is_system = false");
 
         builder.HasOne<User>()
             .WithMany()

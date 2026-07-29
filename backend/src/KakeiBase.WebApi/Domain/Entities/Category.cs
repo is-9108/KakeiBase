@@ -15,6 +15,8 @@ public class Category
     public TransactionType Type { get; private set; }
     /// <summary>レコード作成日時（UTC）</summary>
     public DateTimeOffset CreatedAt { get; private set; }
+    /// <summary>システム管理カテゴリかどうか（ユーザーが編集・削除不可）</summary>
+    public bool IsSystem { get; private set; }
 
     private Category() { }
 
@@ -31,7 +33,26 @@ public class Category
             UserId = userId,
             Name = name,
             Type = type,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsSystem = false
+        };
+    }
+
+    /// <summary>システム管理カテゴリを作成する（ユーザーが編集・削除不可）</summary>
+    /// <param name="userId">所有ユーザーのID</param>
+    /// <param name="name">カテゴリ名</param>
+    /// <param name="type">収入または支出の区分</param>
+    /// <returns>IsSystem=true で作成されたカテゴリエンティティ</returns>
+    public static Category CreateSystem(Guid userId, string name, TransactionType type)
+    {
+        return new Category
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Name = name,
+            Type = type,
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsSystem = true
         };
     }
 
