@@ -13,7 +13,7 @@ KakeiBase — 家計簿管理Webアプリケーション。自社開発企業へ
 | 領域 | 技術 |
 |---|---|
 | フロントエンド | React, TypeScript, Vite |
-| バックエンド | .NET 8 (ASP.NET Core Web API) |
+| バックエンド | .NET 10 (ASP.NET Core Web API) |
 | データベース | PostgreSQL |
 | インフラ | AWS (S3, CloudFront, ALB, ECS Fargate, RDS, VPC/NAT Gateway), Terraform |
 | CI/CD | GitHub Actions, Amazon ECR |
@@ -41,17 +41,44 @@ KakeiBase — 家計簿管理Webアプリケーション。自社開発企業へ
 - バックエンド: [backend/CLAUDE.md](./backend/CLAUDE.md)
 - フロントエンド: [frontend/CLAUDE.md](./frontend/CLAUDE.md)
 
+## スキル(Skills)の使い分け
+
+`.claude/skills/` に定義されたスキルを適切なタイミングで使用する。
+
+| スキル | いつ使うか |
+|---|---|
+| `/codebase-explore` | **実装タスク着手前**にコードベースの現状を把握するとき。まず `.claude/codebase-map.md` を参照し、0から探索しない |
+| `/test-create` | ロジック追加時にテストを書くとき。テストレイヤーの選択基準・命名規約はこのスキルに従う |
+| `/test-review` | テスト追加後、テストの品質・網羅性を確認するとき |
+| `/code-review` | 実装完了後・PR作成前にコードの正しさ・アーキテクチャ準拠を確認するとき |
+| `/security-review` | セキュリティ観点でのレビューが必要なとき(認証・認可・入力検証まわりの変更時は必ず実施) |
+| `/pr-create` | PRを作成するとき。PRテンプレート・規約に準拠させる |
+| `/pr-review` | 既存PRのプロセス・規約遵守を確認するとき |
+| `/adr-create` | ADR対象の変更について合意した後にADRを起票するとき |
+| `/adr-review` | ADR・設計書の整合性を確認するとき |
+| `/issue-create` | 新しいGitHub Issueを作成するとき |
+| `/issue-review` | 既存Issueの着手前トリアージをするとき |
+
+### 推奨ワークフロー
+
+1. **着手**: `/codebase-explore` → 対象箇所を把握
+2. **実装**: コード変更 + `/test-create` でテスト追加
+3. **品質チェック**: `/code-review` + `/test-review` + `/security-review`(該当時)
+4. **PR**: `/pr-create`
+
 ## テストの方針
 
 - 新しいユースケース・ドメインロジックを追加したら、対応する単体テストを同じPRに含める(テストなしのロジック追加は原則NG)
 - Repository/DBアクセスを伴う変更はTestcontainersでの結合テストを検討する
 - カバレッジを上げるためだけの意味のないテストは書かない。境界値・異常系を優先する
+- テスト作成時は `/test-create` スキルを使用し、テストレイヤーの選択基準・規約に従う
 
 ## コミット・PRの規約
 
 - コミットメッセージは [Conventional Commits](https://www.conventionalcommits.org/) (`feat:` `fix:` `refactor:` `test:` `docs:` `chore:`)
 - PRは必ず `.github/PULL_REQUEST_TEMPLATE.md` に沿って書く。特に「設計判断・検討した代替案」は省略しない
 - 実装が完了したら、diffに対してセルフレビューコメントを付ける(判断に迷った箇所、あとで見直したい箇所)
+- PR作成時は `/pr-create` スキルを使用する
 
 ## ADR(意思決定記録)を書くタイミング
 
@@ -65,7 +92,7 @@ KakeiBase — 家計簿管理Webアプリケーション。自社開発企業へ
 
 小さなリファクタリングや単純なバグ修正にはADRは不要。
 
-Claude Codeが実装中に「これはADRを書くべき判断だ」と感じた場合は、実装を進める前に一度立ち止まってユーザーに確認すること。
+Claude Codeが実装中に「これはADRを書くべき判断だ」と感じた場合は、実装を進める前に一度立ち止まってユーザーに確認すること。ADR起票時は `/adr-create` スキルを使用する。
 
 ## devlogについて
 
