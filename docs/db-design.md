@@ -27,6 +27,7 @@ erDiagram
         uuid user_id FK
         varchar(100) name
         text transaction_type
+        boolean is_system
         timestamptz created_at
     }
 
@@ -103,6 +104,7 @@ erDiagram
 | `user_id` | uuid | NOT NULL | FK → users(id) CASCADE | 所有ユーザー |
 | `name` | varchar(100) | NOT NULL | | カテゴリ名 |
 | `transaction_type` | text | NOT NULL | | 収支種別 (`Income` / `Expense`) |
+| `is_system` | boolean | NOT NULL | | システムカテゴリフラグ（`true`: システム管理、編集・削除不可） |
 | `created_at` | timestamptz | NOT NULL | | 作成日時 |
 
 **インデックス:**
@@ -196,7 +198,7 @@ JWT リフレッシュトークンの管理。詳細は [ADR-0004](./adr/0004-au
 - **意味の明確さ**: `integer` は「整数」を直接表現しており、意図がコードとスキーマ双方で読み取れる
 - **上限の妥当性**: `integer` の最大値は約 21 億（2,147,483,647 円）。家計簿の 1 取引金額としては十分
 
-`subscriptions.amount` は別ブランチ（Subscription CRUD 実装時）で同様に変更予定。
+`subscriptions.amount` も同様に `integer` で統一済み。
 
 ### `categories.transaction_type` を enum でなく text にした理由
 

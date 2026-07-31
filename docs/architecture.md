@@ -44,7 +44,7 @@ Amazon EventBridge (毎月1日)
 | CDN | Amazon CloudFront | 静的ファイル配信、APIキャッシュ制御 |
 | 静的ホスティング | Amazon S3 | React SPAのビルド成果物 |
 | ロードバランサー | ALB (Application Load Balancer) | HTTPSターミネーション、トラフィック分散(自宅IPのみ許可) |
-| APIサーバー | ECS Fargate | .NET 8 Web API コンテナ実行(プライベートサブネット) |
+| APIサーバー | ECS Fargate | .NET 10 Web API コンテナ実行(プライベートサブネット) |
 | データベース | Amazon RDS (PostgreSQL) | 家計データ永続化(プライベートサブネット・DB専用) |
 | コンテナレジストリ | Amazon ECR | Dockerイメージ管理 |
 | IaC | Terraform | インフラ構成管理 |
@@ -117,8 +117,8 @@ Domain
 
 | 用途 | ライブラリ |
 |---|---|
-| Web フレームワーク | ASP.NET Core 8 (Minimal API) |
-| O/R マッパー | Entity Framework Core 8 |
+| Web フレームワーク | ASP.NET Core 10 (Minimal API) |
+| O/R マッパー | Entity Framework Core 10 |
 | バリデーション | FluentValidation |
 | 認証 | ASP.NET Core JWT Bearer |
 | テスト | xUnit, NSubstitute, Testcontainers, NetArchTest |
@@ -143,7 +143,7 @@ frontend/
 
 | 用途 | ライブラリ |
 |---|---|
-| UI フレームワーク | React 18 |
+| UI フレームワーク | React 19 |
 | 言語 | TypeScript |
 | ビルドツール | Vite |
 | ルーティング | React Router ([ADR-0011](./adr/0011-client-side-routing-with-react-router.md)) |
