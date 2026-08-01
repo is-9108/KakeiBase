@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://localhost:7227',
+        target: process.env.API_PROXY_TARGET ?? 'https://localhost:7227',
         changeOrigin: true,
         secure: false, // ASP.NET Core開発用の自己署名証明書を許可
       },
