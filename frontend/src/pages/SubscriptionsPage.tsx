@@ -8,6 +8,116 @@ import {
 import type { Subscription } from '../api/subscriptions'
 import Header from '../components/Header'
 
+type SubscriptionTableProps = {
+  items: Subscription[]
+  /** 有効なサブスクのテーブルかどうか */
+  isActive: boolean
+  onToggleActive: (sub: Subscription) => void
+  onEdit: (sub: Subscription) => void
+  onDelete: (id: string) => void
+  isUpdatePending: boolean
+  isDeletePending: boolean
+}
+
+function SubscriptionTable({
+  items,
+  isActive,
+  onToggleActive,
+  onEdit,
+  onDelete,
+  isUpdatePending,
+  isDeletePending,
+}: SubscriptionTableProps) {
+  const emptyText = isActive ? '有効なサブスクはありません' : '停止中のサブスクはありません'
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+      <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+        <h3 className="font-semibold text-gray-900">{isActive ? '有効なサブスク' : '停止中のサブスク'}</h3>
+        <span
+          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+            isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+          }`}
+        >
+          {items.length}件
+        </span>
+      </div>
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              サービス名
+            </th>
+            <th className="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              金額
+            </th>
+            <th className="px-5 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              操作
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {items.length === 0 ? (
+            <tr>
+              <td colSpan={3} className="px-5 py-8 text-center text-gray-400">
+                {emptyText}
+              </td>
+            </tr>
+          ) : (
+            items.map((sub) => (
+              <tr key={sub.id} className="hover:bg-gray-50">
+                <td className="px-5 py-3 text-gray-900">{sub.name}</td>
+                <td className="px-5 py-3 text-right font-medium text-gray-700">
+                  ¥{sub.amount.toLocaleString()}
+                </td>
+                <td className="px-5 py-3 text-center">
+                  {isActive ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => onToggleActive(sub)}
+                        disabled={isUpdatePending}
+                        className="px-2.5 py-1 text-xs bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded transition-colors disabled:opacity-50 mr-1"
+                      >
+                        停止
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onEdit(sub)}
+                        className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+                      >
+                        編集
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => onToggleActive(sub)}
+                        disabled={isUpdatePending}
+                        className="px-2.5 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded transition-colors disabled:opacity-50 mr-1"
+                      >
+                        再開
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(sub.id)}
+                        disabled={isDeletePending}
+                        className="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors disabled:opacity-50"
+                      >
+                        削除
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function SubscriptionsPage() {
   // モーダル
   const [modalMode, setModalMode] = useState<null | 'create' | 'edit'>(null)
@@ -126,104 +236,6 @@ function SubscriptionsPage() {
   const inputClass = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm'
   const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
 
-  function SubscriptionTable({
-    items,
-    isActive,
-  }: {
-    items: Subscription[]
-    /** 有効なサブスクのテーブルかどうか */
-    isActive: boolean
-  }) {
-    const emptyText = isActive ? '有効なサブスクはありません' : '停止中のサブスクはありません'
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-          <h3 className="font-semibold text-gray-900">{isActive ? '有効なサブスク' : '停止中のサブスク'}</h3>
-          <span
-            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-              isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-            }`}
-          >
-            {items.length}件
-          </span>
-        </div>
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                サービス名
-              </th>
-              <th className="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                金額
-              </th>
-              <th className="px-5 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                操作
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {items.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="px-5 py-8 text-center text-gray-400">
-                  {emptyText}
-                </td>
-              </tr>
-            ) : (
-              items.map((sub) => (
-                <tr key={sub.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3 text-gray-900">{sub.name}</td>
-                  <td className="px-5 py-3 text-right font-medium text-gray-700">
-                    ¥{sub.amount.toLocaleString()}
-                  </td>
-                  <td className="px-5 py-3 text-center">
-                    {isActive ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleActive(sub)}
-                          disabled={updateMutation.isPending}
-                          className="px-2.5 py-1 text-xs bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded transition-colors disabled:opacity-50 mr-1"
-                        >
-                          停止
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(sub)}
-                          className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-                        >
-                          編集
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleActive(sub)}
-                          disabled={updateMutation.isPending}
-                          className="px-2.5 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded transition-colors disabled:opacity-50 mr-1"
-                        >
-                          再開
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(sub.id)}
-                          disabled={deleteMutation.isPending}
-                          className="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors disabled:opacity-50"
-                        >
-                          削除
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen">
       <Header />
@@ -248,8 +260,24 @@ function SubscriptionsPage() {
 
         {subscriptions && (
           <>
-            <SubscriptionTable items={active} isActive={true} />
-            <SubscriptionTable items={inactive} isActive={false} />
+            <SubscriptionTable
+              items={active}
+              isActive={true}
+              onToggleActive={handleToggleActive}
+              onEdit={openEditModal}
+              onDelete={handleDelete}
+              isUpdatePending={updateMutation.isPending}
+              isDeletePending={deleteMutation.isPending}
+            />
+            <SubscriptionTable
+              items={inactive}
+              isActive={false}
+              onToggleActive={handleToggleActive}
+              onEdit={openEditModal}
+              onDelete={handleDelete}
+              isUpdatePending={updateMutation.isPending}
+              isDeletePending={deleteMutation.isPending}
+            />
           </>
         )}
       </main>
