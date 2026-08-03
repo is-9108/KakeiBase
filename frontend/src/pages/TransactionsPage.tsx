@@ -156,123 +156,182 @@ function TransactionsPage() {
   const filterCategories =
     typeFilter === 'All' ? (categories ?? []) : (categories ?? []).filter((c) => c.type === typeFilter)
 
+  const inputClass = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm'
+  const selectClass = inputClass
+  const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
+
   return (
-    <div>
+    <div className="min-h-screen">
       <Header />
 
-      <h2>収支一覧</h2>
+      <main className="mx-auto max-w-7xl px-4 py-6">
+        <div className="flex flex-wrap items-center gap-4 mb-6">
+          {/* 月ナビゲーション */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={goToPrevMonth}
+              className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              ◄
+            </button>
+            <span className="text-lg font-semibold text-gray-900 min-w-28 text-center">
+              {year}年{month}月
+            </span>
+            <button
+              type="button"
+              onClick={goToNextMonth}
+              className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              ►
+            </button>
+          </div>
 
-      <div>
-        <button type="button" onClick={goToPrevMonth}>
-          ◄
-        </button>
-        <span>
-          {year}年{month}月
-        </span>
-        <button type="button" onClick={goToNextMonth}>
-          ►
-        </button>
-        <button type="button" onClick={openCreateModal}>
-          + 新規登録
-        </button>
-      </div>
-
-      <div>
-        <label htmlFor="type-filter">種別</label>
-        <select
-          id="type-filter"
-          value={typeFilter}
-          onChange={(e) => handleTypeFilterChange(e.target.value as CategoryType | 'All')}
-          aria-label="種別フィルタ"
-        >
-          <option value="All">すべて</option>
-          <option value="Expense">支出</option>
-          <option value="Income">収入</option>
-        </select>
-
-        <label htmlFor="category-filter">カテゴリ</label>
-        <select
-          id="category-filter"
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          aria-label="カテゴリフィルタ"
-        >
-          <option value="">すべて</option>
-          {filterCategories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {isLoading && (
-        <div role="status" aria-label="読み込み中">
-          読み込み中...
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="ml-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            + 新規登録
+          </button>
         </div>
-      )}
 
-      {transactions && (
-        <table>
-          <thead>
-            <tr>
-              <th>日付</th>
-              <th>カテゴリ</th>
-              <th>内容</th>
-              <th>金額</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={5}>収支なし</td>
-              </tr>
-            ) : (
-              filtered.map((tx) => {
-                const cat = categories?.find((c) => c.id === tx.categoryId)
-                const amountDisplay =
-                  cat?.type === 'Income'
-                    ? `+¥${tx.amount.toLocaleString()}`
-                    : `-¥${tx.amount.toLocaleString()}`
-                return (
-                  <tr key={tx.id}>
-                    <td>{tx.date}</td>
-                    <td>{tx.categoryName}</td>
-                    <td>{tx.memo ?? '—'}</td>
-                    <td>{amountDisplay}</td>
-                    <td>
-                      <button type="button" onClick={() => openEditModal(tx.id)}>
-                        編集
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(tx.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        削除
-                      </button>
+        {/* フィルター */}
+        <div className="flex flex-wrap items-center gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <label htmlFor="type-filter" className="text-sm font-medium text-gray-700">
+              種別
+            </label>
+            <select
+              id="type-filter"
+              value={typeFilter}
+              onChange={(e) => handleTypeFilterChange(e.target.value as CategoryType | 'All')}
+              aria-label="種別フィルタ"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="All">すべて</option>
+              <option value="Expense">支出</option>
+              <option value="Income">収入</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="category-filter" className="text-sm font-medium text-gray-700">
+              カテゴリ
+            </label>
+            <select
+              id="category-filter"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              aria-label="カテゴリフィルタ"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">すべて</option>
+              {filterCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {isLoading && (
+          <div role="status" aria-label="読み込み中" className="text-gray-500 py-8 text-center">
+            読み込み中...
+          </div>
+        )}
+
+        {transactions && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    日付
+                  </th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    カテゴリ
+                  </th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    内容
+                  </th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    金額
+                  </th>
+                  <th className="px-5 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    操作
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center text-gray-400">
+                      収支なし
                     </td>
                   </tr>
-                )
-              })
-            )}
-          </tbody>
-        </table>
-      )}
+                ) : (
+                  filtered.map((tx) => {
+                    const cat = categories?.find((c) => c.id === tx.categoryId)
+                    const isIncome = cat?.type === 'Income'
+                    const amountDisplay = isIncome
+                      ? `+¥${tx.amount.toLocaleString()}`
+                      : `-¥${tx.amount.toLocaleString()}`
+                    return (
+                      <tr key={tx.id} className="hover:bg-gray-50">
+                        <td className="px-5 py-3 text-gray-600">{tx.date}</td>
+                        <td className="px-5 py-3 text-gray-900">{tx.categoryName}</td>
+                        <td className="px-5 py-3 text-gray-500">{tx.memo ?? '—'}</td>
+                        <td
+                          className={`px-5 py-3 text-right font-medium ${isIncome ? 'text-green-600' : 'text-red-600'}`}
+                        >
+                          {amountDisplay}
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(tx.id)}
+                            className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors mr-1"
+                          >
+                            編集
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(tx.id)}
+                            disabled={deleteMutation.isPending}
+                            className="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors disabled:opacity-50"
+                          >
+                            削除
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
 
+      {/* モーダル */}
       {modalMode !== null && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label={modalMode === 'create' ? '新規登録' : '収支編集'}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)' }}
+          className="fixed inset-0 bg-black/40 flex items-center justify-center px-4 z-50"
         >
-          <div style={{ background: '#fff', margin: '10vh auto', padding: '2rem', maxWidth: '400px' }}>
-            <h3>{modalMode === 'create' ? '新規登録' : '収支編集'}</h3>
-            <form onSubmit={handleSubmit}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-5">
+              {modalMode === 'create' ? '新規登録' : '収支編集'}
+            </h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="form-type">種別</label>
+                <label htmlFor="form-type" className={labelClass}>
+                  種別
+                </label>
                 <select
                   id="form-type"
                   value={formType}
@@ -280,18 +339,22 @@ function TransactionsPage() {
                     setFormType(e.target.value as CategoryType)
                     setFormCategoryId('')
                   }}
+                  className={selectClass}
                 >
                   <option value="Expense">支出</option>
                   <option value="Income">収入</option>
                 </select>
               </div>
               <div>
-                <label htmlFor="form-category">カテゴリ</label>
+                <label htmlFor="form-category" className={labelClass}>
+                  カテゴリ
+                </label>
                 <select
                   id="form-category"
                   value={formCategoryId}
                   onChange={(e) => setFormCategoryId(e.target.value)}
                   required
+                  className={selectClass}
                 >
                   <option value="">選択してください</option>
                   {formCategories.map((c) => (
@@ -302,7 +365,9 @@ function TransactionsPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="form-amount">金額</label>
+                <label htmlFor="form-amount" className={labelClass}>
+                  金額
+                </label>
                 <input
                   id="form-amount"
                   type="number"
@@ -310,43 +375,60 @@ function TransactionsPage() {
                   value={formAmount}
                   onChange={(e) => setFormAmount(e.target.value)}
                   required
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label htmlFor="form-date">日付</label>
+                <label htmlFor="form-date" className={labelClass}>
+                  日付
+                </label>
                 <input
                   id="form-date"
                   type="date"
                   value={formDate}
                   onChange={(e) => setFormDate(e.target.value)}
                   required
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label htmlFor="form-memo">メモ</label>
+                <label htmlFor="form-memo" className={labelClass}>
+                  メモ
+                </label>
                 <input
                   id="form-memo"
                   type="text"
                   value={formMemo}
                   onChange={(e) => setFormMemo(e.target.value)}
+                  className={inputClass}
                 />
               </div>
-              <button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {modalMode === 'create' ? '登録' : '更新'}
-              </button>
-              <button type="button" onClick={closeModal}>
-                キャンセル
-              </button>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  {modalMode === 'create' ? '登録' : '更新'}
+                </button>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+                >
+                  キャンセル
+                </button>
+              </div>
             </form>
           </div>
         </div>
       )}
 
       {toastMessage && (
-        <div role="alert" style={{ position: 'fixed', bottom: '1rem', right: '1rem' }}>
+        <div
+          role="alert"
+          className="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg text-sm"
+        >
           {toastMessage}
         </div>
       )}

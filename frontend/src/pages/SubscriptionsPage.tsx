@@ -123,118 +123,154 @@ function SubscriptionsPage() {
   const active = (subscriptions ?? []).filter((s) => s.isActive)
   const inactive = (subscriptions ?? []).filter((s) => !s.isActive)
 
+  const inputClass = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm'
+  const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
+
+  function SubscriptionTable({
+    items,
+    isActive,
+  }: {
+    items: Subscription[]
+    /** 有効なサブスクのテーブルかどうか */
+    isActive: boolean
+  }) {
+    const emptyText = isActive ? '有効なサブスクはありません' : '停止中のサブスクはありません'
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-900">{isActive ? '有効なサブスク' : '停止中のサブスク'}</h3>
+          <span
+            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+              isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {items.length}件
+          </span>
+        </div>
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                サービス名
+              </th>
+              <th className="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                金額
+              </th>
+              <th className="px-5 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {items.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-5 py-8 text-center text-gray-400">
+                  {emptyText}
+                </td>
+              </tr>
+            ) : (
+              items.map((sub) => (
+                <tr key={sub.id} className="hover:bg-gray-50">
+                  <td className="px-5 py-3 text-gray-900">{sub.name}</td>
+                  <td className="px-5 py-3 text-right font-medium text-gray-700">
+                    ¥{sub.amount.toLocaleString()}
+                  </td>
+                  <td className="px-5 py-3 text-center">
+                    {isActive ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(sub)}
+                          disabled={updateMutation.isPending}
+                          className="px-2.5 py-1 text-xs bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded transition-colors disabled:opacity-50 mr-1"
+                        >
+                          停止
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(sub)}
+                          className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+                        >
+                          編集
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(sub)}
+                          disabled={updateMutation.isPending}
+                          className="px-2.5 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded transition-colors disabled:opacity-50 mr-1"
+                        >
+                          再開
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(sub.id)}
+                          disabled={deleteMutation.isPending}
+                          className="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors disabled:opacity-50"
+                        >
+                          削除
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
   return (
-    <div>
+    <div className="min-h-screen">
       <Header />
 
-      <h2>サブスク管理</h2>
-
-      <div>
-        <button type="button" onClick={openCreateModal}>
-          + 追加
-        </button>
-      </div>
-
-      {isLoading && (
-        <div role="status" aria-label="読み込み中">
-          読み込み中...
+      <main className="mx-auto max-w-7xl px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">サブスク管理</h2>
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            + 追加
+          </button>
         </div>
-      )}
 
-      {subscriptions && (
-        <>
-          <h3>有効なサブスク</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>サービス名</th>
-                <th>金額</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {active.length === 0 ? (
-                <tr>
-                  <td colSpan={3}>有効なサブスクはありません</td>
-                </tr>
-              ) : (
-                active.map((sub) => (
-                  <tr key={sub.id}>
-                    <td>{sub.name}</td>
-                    <td>¥{sub.amount.toLocaleString()}</td>
-                    <td>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleActive(sub)}
-                        disabled={updateMutation.isPending}
-                      >
-                        停止
-                      </button>
-                      <button type="button" onClick={() => openEditModal(sub)}>
-                        編集
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        {isLoading && (
+          <div role="status" aria-label="読み込み中" className="text-gray-500 py-8 text-center">
+            読み込み中...
+          </div>
+        )}
 
-          <h3>停止中のサブスク</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>サービス名</th>
-                <th>金額</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inactive.length === 0 ? (
-                <tr>
-                  <td colSpan={3}>停止中のサブスクはありません</td>
-                </tr>
-              ) : (
-                inactive.map((sub) => (
-                  <tr key={sub.id}>
-                    <td>{sub.name}</td>
-                    <td>¥{sub.amount.toLocaleString()}</td>
-                    <td>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleActive(sub)}
-                        disabled={updateMutation.isPending}
-                      >
-                        再開
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(sub.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        削除
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </>
-      )}
+        {subscriptions && (
+          <>
+            <SubscriptionTable items={active} isActive={true} />
+            <SubscriptionTable items={inactive} isActive={false} />
+          </>
+        )}
+      </main>
 
+      {/* モーダル */}
       {modalMode !== null && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label={modalMode === 'create' ? 'サブスク追加' : 'サブスク編集'}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)' }}
+          className="fixed inset-0 bg-black/40 flex items-center justify-center px-4 z-50"
         >
-          <div style={{ background: '#fff', margin: '10vh auto', padding: '2rem', maxWidth: '400px' }}>
-            <h3>{modalMode === 'create' ? 'サブスク追加' : 'サブスク編集'}</h3>
-            <form onSubmit={handleSubmit}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-5">
+              {modalMode === 'create' ? 'サブスク追加' : 'サブスク編集'}
+            </h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="form-name">サービス名</label>
+                <label htmlFor="form-name" className={labelClass}>
+                  サービス名
+                </label>
                 <input
                   id="form-name"
                   type="text"
@@ -242,10 +278,13 @@ function SubscriptionsPage() {
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   required
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label htmlFor="form-amount">金額</label>
+                <label htmlFor="form-amount" className={labelClass}>
+                  金額
+                </label>
                 <input
                   id="form-amount"
                   type="number"
@@ -253,24 +292,35 @@ function SubscriptionsPage() {
                   value={formAmount}
                   onChange={(e) => setFormAmount(e.target.value)}
                   required
+                  className={inputClass}
                 />
               </div>
-              <button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {modalMode === 'create' ? '登録' : '更新'}
-              </button>
-              <button type="button" onClick={closeModal}>
-                キャンセル
-              </button>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  {modalMode === 'create' ? '登録' : '更新'}
+                </button>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+                >
+                  キャンセル
+                </button>
+              </div>
             </form>
           </div>
         </div>
       )}
 
       {toastMessage && (
-        <div role="alert" style={{ position: 'fixed', bottom: '1rem', right: '1rem' }}>
+        <div
+          role="alert"
+          className="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg text-sm"
+        >
           {toastMessage}
         </div>
       )}
