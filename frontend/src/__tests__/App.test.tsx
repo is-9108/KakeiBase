@@ -17,8 +17,8 @@ function renderWithProviders(ui: ReactElement, initialEntries: string[] = ['/'])
 }
 
 describe('App', () => {
-  it('/ でKakeiBaseの見出しを表示する', () => {
+  it('/ でKakeiBaseのロゴを表示する', () => {
     renderWithProviders(<App />)
-    expect(screen.getByRole('heading', { name: 'KakeiBase' })).toBeInTheDocument()
+    expect(screen.getByText('KakeiBase')).toBeInTheDocument()
   })
 })
