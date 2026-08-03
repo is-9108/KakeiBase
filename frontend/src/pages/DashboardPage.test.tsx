@@ -54,9 +54,9 @@ describe('DashboardPage', () => {
 
     renderDashboardPage()
 
-    expect(await screen.findByText('300,000円')).toBeInTheDocument()
-    expect(screen.getByText('120,000円')).toBeInTheDocument()
-    expect(screen.getByText('180,000円')).toBeInTheDocument()
+    expect(await screen.findByText('+¥300,000')).toBeInTheDocument()
+    expect(screen.getByText('-¥120,000')).toBeInTheDocument()
+    expect(screen.getByText('¥180,000')).toBeInTheDocument()
     expect(screen.getAllByText('食費').length).toBeGreaterThan(0)
     expect(screen.getByText('2026-07-01')).toBeInTheDocument()
   })
@@ -70,7 +70,7 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('status')).toBeInTheDocument()
 
     resolveData(mockData)
-    await screen.findByText('300,000円')
+    await screen.findByText('+¥300,000')
 
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
@@ -83,7 +83,7 @@ describe('DashboardPage', () => {
 
     renderDashboardPage()
 
-    expect(await screen.findByText('300,000円')).toBeInTheDocument()
+    expect(await screen.findByText('+¥300,000')).toBeInTheDocument()
     expect(mockRefresh).toHaveBeenCalledTimes(1)
     expect(mockGetDashboardSummary).toHaveBeenCalledTimes(2)
   })
