@@ -230,6 +230,10 @@
 
 ## 共通 UI 仕様
 
+### スタイリング
+
+全画面の実装に Tailwind CSS v4（`@tailwindcss/vite` プラグイン経由）を使用している。詳細は [ADR-0013](./adr/0013-tailwind-css-adoption.md) を参照。
+
 ### グローバルナビゲーション
 
 全認証済み画面に表示するヘッダー。

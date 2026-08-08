@@ -1,16 +1,19 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using Amazon.S3;
 using FluentValidation;
 using KakeiBase.WebApi.Application.Interfaces;
 using KakeiBase.WebApi.Application.UseCases.Auth;
 using KakeiBase.WebApi.Application.UseCases.Categories;
 using KakeiBase.WebApi.Application.UseCases.Dashboard;
+using KakeiBase.WebApi.Application.UseCases.Receipts;
 using KakeiBase.WebApi.Application.UseCases.Subscriptions;
 using KakeiBase.WebApi.Application.UseCases.Transactions;
 using KakeiBase.WebApi.Endpoints;
 using KakeiBase.WebApi.Infrastructure.Auth;
 using KakeiBase.WebApi.Infrastructure.Persistence;
 using KakeiBase.WebApi.Infrastructure.Persistence.Repositories;
+using KakeiBase.WebApi.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -105,6 +108,12 @@ builder.Services.AddScoped<CreateSubscriptionUseCase>();
 builder.Services.AddScoped<UpdateSubscriptionUseCase>();
 builder.Services.AddScoped<DeleteSubscriptionUseCase>();
 
+var awsRegion = builder.Configuration["Aws:Region"] ?? "ap-northeast-1";
+builder.Services.AddSingleton<IAmazonS3>(sp =>
+    new AmazonS3Client(Amazon.RegionEndpoint.GetBySystemName(awsRegion)));
+builder.Services.AddScoped<IReceiptStorageService, S3ReceiptStorageService>();
+builder.Services.AddScoped<GeneratePresignedUrlUseCase>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -124,6 +133,7 @@ app.MapCategoryEndpoints();
 app.MapTransactionEndpoints();
 app.MapSubscriptionEndpoints();
 app.MapDashboardEndpoints();
+app.MapReceiptEndpoints();
 
 app.Run();
 

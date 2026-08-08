@@ -268,7 +268,7 @@ frontend/
 
 **エラー処理:** パース失敗時はログ出力のみ。DLQ による再処理は将来対応とする。
 
-**関連 API:** `POST /api/receipts/presigned-url` — フロントエンドが S3 に直接アップロードするための Presigned PUT URL を取得する。
+**関連 API:** `POST /api/receipts/presigned-url` — フロントエンドが S3 に直接アップロードするための Presigned PUT URL を取得する（実装済み）。
 
 ---
 
