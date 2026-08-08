@@ -67,11 +67,6 @@ RFC 7807 (Problem Details) 形式で統一する。
 | PUT | `/api/subscriptions/{id}` | 必要 | サブスク更新 |
 | DELETE | `/api/subscriptions/{id}` | 必要 | サブスク削除 |
 | GET | `/api/dashboard/summary` | 必要 | ダッシュボード集計 |
-
-### 計画中（未実装）
-
-| メソッド | パス | 認証 | 説明 |
-|---|---|---|---|
 | POST | `/api/receipts/presigned-url` | 必要 | レシート画像アップロード用 Presigned URL 取得 |
 
 ---
@@ -542,11 +537,7 @@ Cookie を削除し、リフレッシュトークンを DB で無効化する。
 
 ---
 
-## 計画中 API の概要仕様
-
-> 以下は未実装。実装時に詳細を確定する。
-
-### POST `/api/receipts/presigned-url`
+## POST `/api/receipts/presigned-url`
 
 フロントエンドが S3 にレシート画像を直接アップロードするための Presigned PUT URL を取得する。
 詳細は [ADR-0005](./adr/0005-receipt-ocr-lambda.md) を参照。
