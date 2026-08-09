@@ -30,7 +30,7 @@ S3 イベント通知で Lambda を起動して Amazon Textract で OCR を実�
 - S3 バケット（レシート画像専用）を新設する
 - API サーバーに `POST /api/receipts/presigned-url` エンドポイントを追加する
   - フロントエンドは取得した Presigned PUT URL へ直接アップロードする（API サーバーを経由しない）
-- Lambda の実装言語は Python 3.12（Boto3 の Textract AnalyzeExpense API の事例が充実しているため）
+- Lambda の実装言語は Go（ARM64, `GOOS=linux GOARCH=arm64`。詳細は ADR-0009 参照）
 - パース失敗時はログ出力のみとし、DLQ（デッドレターキュー）による再処理は将来対応とする
 - 画像の保持期間は無期限ではなくADR-0009で定める（365日後に削除する）
 - S3オブジェクトキーのフォルダ階層・ファイル名の命名規則はADR-0010で定める（年/月フォルダ+タイムスタンプファイル名）
