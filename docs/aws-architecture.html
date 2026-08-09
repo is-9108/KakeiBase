@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KakeiBase AWS Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #0f1923; color: #e8eaed; min-height: 100vh; padding: 32px; }
+  h1 { text-align: center; font-size: 28px; font-weight: 600; margin-bottom: 8px; color: #fff; }
+  .subtitle { text-align: center; font-size: 14px; color: #8899a6; margin-bottom: 40px; }
+
+  /* Layout */
+  .diagram { max-width: 1100px; margin: 0 auto; position: relative; }
+
+  /* VPC box */
+  .vpc {
+    border: 2px solid #3b82f6;
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    background: rgba(59,130,246,0.04);
+  }
+  .vpc-label {
+    position: absolute; top: -13px; left: 24px;
+    background: #0f1923; padding: 0 10px;
+    font-size: 14px; font-weight: 600; color: #60a5fa;
+  }
+  .vpc-cidr { color: #8899a6; font-weight: 400; font-size: 12px; }
+
+  /* Subnet rows */
+  .subnet-row { display: flex; gap: 16px; margin-bottom: 16px; }
+  .subnet-row:last-child { margin-bottom: 0; }
+
+  .subnet {
+    flex: 1;
+    border: 1.5px dashed;
+    border-radius: 8px;
+    padding: 16px;
+    position: relative;
+    min-height: 80px;
+  }
+  .subnet-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+    margin-bottom: 10px; text-transform: uppercase;
+  }
+  .subnet-cidr { font-size: 10px; color: #8899a6; font-weight: 400; }
+
+  .subnet.public { border-color: #22c55e; background: rgba(34,197,94,0.05); }
+  .subnet.public .subnet-label { color: #4ade80; }
+
+  .subnet.private-app { border-color: #f59e0b; background: rgba(245,158,11,0.05); }
+  .subnet.private-app .subnet-label { color: #fbbf24; }
+
+  .subnet.private-db { border-color: #ef4444; background: rgba(239,68,68,0.05); }
+  .subnet.private-db .subnet-label { color: #f87171; }
+
+  /* Resource boxes */
+  .resource {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #1a2733;
+    border: 1px solid #2d3f4f;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    margin: 4px;
+    transition: transform 0.15s;
+  }
+  .resource:hover { transform: translateY(-2px); }
+
+  .resource .icon {
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .icon.alb { background: #7c3aed; }
+  .icon.nat { background: #059669; }
+  .icon.igw { background: #22c55e; }
+  .icon.ecs { background: #f97316; }
+  .icon.lambda { background: #f59e0b; }
+  .icon.rds { background: #3b82f6; }
+  .icon.s3 { background: #059669; }
+  .icon.cf { background: #8b5cf6; }
+  .icon.ecr { background: #f97316; }
+  .icon.sm { background: #ef4444; }
+  .icon.cw { background: #ec4899; }
+  .icon.eb { background: #f59e0b; }
+  .icon.ses { background: #6366f1; }
+  .icon.tx { background: #14b8a6; }
+
+  .resource-name { font-weight: 500; }
+  .resource-detail { font-size: 11px; color: #8899a6; }
+
+  /* External services (outside VPC) */
+  .external-row {
+    display: flex; gap: 16px; margin-bottom: 24px;
+    justify-content: center; flex-wrap: wrap;
+  }
+
+  /* User / browser */
+  .user-box {
+    text-align: center; margin-bottom: 32px;
+  }
+  .user-icon {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #1e3a5f;
+    border: 2px solid #3b82f6;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 8px;
+  }
+  .user-label { font-size: 13px; color: #93c5fd; }
+
+  /* Arrows */
+  .arrow-down {
+    text-align: center;
+    color: #4b5563;
+    font-size: 20px;
+    margin: 12px 0;
+    letter-spacing: 2px;
+  }
+  .arrow-label {
+    font-size: 11px;
+    color: #6b7280;
+    display: block;
+  }
+
+  /* Section headers */
+  .section-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 24px 0 12px;
+    padding-left: 4px;
+  }
+
+  /* Flow connectors */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+  }
+  .flow-arrow {
+    color: #4b5563;
+    font-size: 18px;
+  }
+  .flow-label {
+    font-size: 11px;
+    color: #6b7280;
+    background: #1a2733;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid #2d3f4f;
+  }
+
+  /* SG badge */
+  .sg-badge {
+    display: inline-block;
+    font-size: 9px;
+    color: #fbbf24;
+    border: 1px solid #92400e;
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-top: 4px;
+    background: rgba(245,158,11,0.1);
+  }
+
+  /* Data flow section */
+  .data-flow {
+    background: #131f2b;
+    border: 1px solid #2d3f4f;
+    border-radius: 10px;
+    padding: 24px;
+    margin-top: 32px;
+  }
+  .data-flow h2 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: #93c5fd;
+  }
+  .flow-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    background: #1a2733;
+    border-radius: 6px;
+    border-left: 3px solid;
+  }
+  .flow-item.sync { border-left-color: #3b82f6; }
+  .flow-item.async { border-left-color: #f59e0b; }
+  .flow-item.batch { border-left-color: #8b5cf6; }
+
+  .flow-number {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .flow-item.sync .flow-number { background: #1e3a5f; color: #60a5fa; }
+  .flow-item.async .flow-number { background: #422006; color: #fbbf24; }
+  .flow-item.batch .flow-number { background: #2e1065; color: #a78bfa; }
+
+  .flow-desc { font-size: 13px; line-height: 1.5; }
+  .flow-desc strong { color: #e2e8f0; }
+  .flow-path { font-size: 11px; color: #6b7280; font-family: 'Consolas', monospace; margin-top: 2px; }
+
+  /* Legend */
+  .legend {
+    display: flex; gap: 20px; justify-content: center;
+    margin-top: 24px; flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: #8899a6;
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 2px;
+  }
+
+  /* Endpoint VPC endpoint */
+  .vpce {
+    position: absolute;
+    right: 16px; bottom: 8px;
+    font-size: 10px;
+    color: #4ade80;
+    background: rgba(34,197,94,0.1);
+    border: 1px solid #166534;
+    border-radius: 4px;
+    padding: 2px 8px;
+  }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .subnet-row { flex-direction: column; }
+    body { padding: 16px; }
+    .flow-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<h1>KakeiBase AWS Architecture</h1>
+<p class="subtitle">Terraform IaC - ap-northeast-1 (Tokyo)</p>
+
+<!-- User -->
+<div class="user-box">
+  <div class="user-icon">&#x1F464;</div>
+  <div class="user-label">User / Browser</div>
+</div>
+
+<div class="arrow-down">
+  &#x25BC;
+  <span class="arrow-label">HTTPS</span>
+</div>
+
+<div class="diagram">
+
+  <!-- External Services (outside VPC) -->
+  <div class="section-header">Global / Regional Services (VPC outside)</div>
+  <div class="external-row">
+    <div class="resource">
+      <div class="icon cf">CF</div>
+      <div>
+        <div class="resource-name">CloudFront</div>
+        <div class="resource-detail">CDN + SPA routing</div>
+      </div>
+    </div>
+    <div class="resource">
+      <div class="icon s3">S3</div>
+      <div>
+        <div class="resource-name">Frontend Bucket</div>
+        <div class="resource-detail">React (OAC)</div>
+      </div>
+    </div>
+    <div class="resource">
+      <div class="icon s3">S3</div>
+      <div>
+        <div class="resource-name">Receipt Bucket</div>
+        <div class="resource-detail">Presigned URL upload</div>
+      </div>
+    </div>
+    <div class="resource">
+      <div class="icon ecr">ECR</div>
+      <div>
+        <div class="resource-name">ECR</div>
+        <div class="resource-detail">Container registry</div>
+      </div>
+    </div>
+    <div class="resource">
+      <div class="icon sm">SM</div>
+      <div>
+        <div class="resource-name">Secrets Manager</div>
+        <div class="resource-detail">DB credentials</div>
+      </div>
+    </div>
+    <div class="resource">
+      <div class="icon cw">CW</div>
+      <div>
+        <div class="resource-name">CloudWatch</div>
+        <div class="resource-detail">Logs</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="external-row">
+    <div class="resource">
+      <div class="icon eb">EB</div>
+      <div>
+        <div class="resource-name">EventBridge</div>
+        <div class="resource-detail">Monthly scheduler</div>
+      </div>
+    </div>
+    <div class="resource">
+      <div class="icon ses">SES</div>
+      <div>
+        <div class="resource-name">SES</div>
+        <div class="resource-detail">Monthly report email</div>
+      </div>
+    </div>
+    <div class="resource">
+      <div class="icon tx">Tx</div>
+      <div>
+        <div class="resource-name">Textract</div>
+        <div class="resource-detail">Receipt OCR</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-down">&#x25BC;</div>
+
+  <!-- VPC -->
+  <div class="vpc">
+    <div class="vpc-label">VPC <span class="vpc-cidr">10.0.0.0/16</span></div>
+
+    <!-- Public Subnets -->
+    <div class="subnet-row">
+      <div class="subnet public">
+        <div class="subnet-label">Public Subnet 1 <span class="subnet-cidr">10.0.0.0/24 (ap-northeast-1a)</span></div>
+        <div class="resource">
+          <div class="icon alb">ALB</div>
+          <div>
+            <div class="resource-name">Application LB</div>
+            <div class="resource-detail">HTTP :80 &rarr; ECS :8080</div>
+            <div class="sg-badge">alb-sg: 80,443 from home IP</div>
+          </div>
+        </div>
+        <div class="resource">
+          <div class="icon nat">NAT</div>
+          <div>
+            <div class="resource-name">NAT Gateway</div>
+            <div class="resource-detail">Single AZ (cost opt.)</div>
+          </div>
+        </div>
+        <div class="resource">
+          <div class="icon igw">IGW</div>
+          <div>
+            <div class="resource-name">Internet GW</div>
+          </div>
+        </div>
+      </div>
+      <div class="subnet public">
+        <div class="subnet-label">Public Subnet 2 <span class="subnet-cidr">10.0.1.0/24 (ap-northeast-1c)</span></div>
+        <div style="color:#6b7280; font-size:12px; padding:8px;">(ALB cross-AZ)</div>
+      </div>
+    </div>
+
+    <!-- Private App Subnets -->
+    <div class="subnet-row">
+      <div class="subnet private-app">
+        <div class="subnet-label">Private App Subnet 1 <span class="subnet-cidr">10.0.10.0/24 (1a)</span></div>
+        <div class="resource">
+          <div class="icon ecs">ECS</div>
+          <div>
+            <div class="resource-name">Fargate Service</div>
+            <div class="resource-detail">.NET 10 API (256 CPU / 512 MB)</div>
+            <div class="sg-badge">ecs-sg: 8080 from alb-sg</div>
+          </div>
+        </div>
+      </div>
+      <div class="subnet private-app">
+        <div class="subnet-label">Private App Subnet 2 <span class="subnet-cidr">10.0.11.0/24 (1c)</span></div>
+        <div class="resource">
+          <div class="icon lambda">&#x03BB;</div>
+          <div>
+            <div class="resource-name">Lambda (Go / ARM64)</div>
+            <div class="resource-detail">OCR / Scheduler / Report</div>
+            <div class="sg-badge">lambda-sg: egress only</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Private DB Subnets -->
+    <div class="subnet-row">
+      <div class="subnet private-db">
+        <div class="subnet-label">Private DB Subnet 1 <span class="subnet-cidr">10.0.20.0/24 (1a)</span></div>
+        <div class="resource">
+          <div class="icon rds">RDS</div>
+          <div>
+            <div class="resource-name">PostgreSQL 16</div>
+            <div class="resource-detail">db.t3.micro / Single-AZ / Encrypted</div>
+            <div class="sg-badge">rds-sg: 5432 from ecs-sg, lambda-sg</div>
+          </div>
+        </div>
+      </div>
+      <div class="subnet private-db">
+        <div class="subnet-label">Private DB Subnet 2 <span class="subnet-cidr">10.0.21.0/24 (1c)</span></div>
+        <div style="color:#6b7280; font-size:12px; padding:8px;">(DB Subnet Group member)</div>
+      </div>
+    </div>
+
+    <div class="vpce">S3 Gateway VPC Endpoint</div>
+  </div>
+
+  <!-- Data Flow -->
+  <div class="data-flow">
+    <h2>Data Flow</h2>
+
+    <div class="flow-item sync">
+      <div class="flow-number">1</div>
+      <div>
+        <div class="flow-desc"><strong>Web Request (Sync)</strong> &mdash; User browses the app</div>
+        <div class="flow-path">Browser &rarr; CloudFront &rarr; S3 (static) or ALB &rarr; ECS Fargate &rarr; RDS</div>
+      </div>
+    </div>
+
+    <div class="flow-item sync">
+      <div class="flow-number">2</div>
+      <div>
+        <div class="flow-desc"><strong>Receipt Upload (Sync)</strong> &mdash; User uploads a receipt image</div>
+        <div class="flow-path">Browser &rarr; CloudFront &rarr; ALB &rarr; ECS (Presigned URL) &rarr; Browser &rarr; S3 Receipt Bucket (PUT)</div>
+      </div>
+    </div>
+
+    <div class="flow-item async">
+      <div class="flow-number">3</div>
+      <div>
+        <div class="flow-desc"><strong>Receipt OCR (Async)</strong> &mdash; Auto-parse receipt image</div>
+        <div class="flow-path">S3 PutObject Event &rarr; Lambda (Go) &rarr; Textract OCR &rarr; RDS INSERT</div>
+      </div>
+    </div>
+
+    <div class="flow-item batch">
+      <div class="flow-number">4</div>
+      <div>
+        <div class="flow-desc"><strong>Subscription Scheduler (Batch)</strong> &mdash; Monthly auto-charge</div>
+        <div class="flow-path">EventBridge (1st of month) &rarr; Lambda (Go) &rarr; RDS INSERT (transactions)</div>
+      </div>
+    </div>
+
+    <div class="flow-item batch">
+      <div class="flow-number">5</div>
+      <div>
+        <div class="flow-desc"><strong>Monthly Report (Batch)</strong> &mdash; Summary email</div>
+        <div class="flow-path">EventBridge (1st of month) &rarr; Lambda (Go) &rarr; RDS SELECT &rarr; SES email</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div> Public Subnet</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> Private App Subnet</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div> Private DB Subnet</div>
+    <div class="legend-item"><div class="legend-dot" style="border:1.5px solid #3b82f6;"></div> VPC Boundary</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div> Sync Flow</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> Async Flow</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6;"></div> Batch Flow</div>
+  </div>
+
+</div>
+
+</body>
+</html>
