@@ -29,6 +29,6 @@ EventBridge Scheduler で毎月1日 08:00 JST に Lambda を起動し、
 - ADR-0003 のサブスクスケジューリング Lambda と同じ Lambda + EventBridge パターンを踏襲する
 - メール件名: `[KakeiBase] YYYY年M月 月次レポート`
 - 本文は HTML メール（収入合計・支出合計・残高・カテゴリ別内訳）
-- Lambda の実装言語は Python 3.12（ADR-0005 と統一し、運用コストを下げる）
+- Lambda の実装言語は Go（ARM64, `GOOS=linux GOARCH=arm64`。詳細は ADR-0009 参照）
 - SES の送信元ドメインは本番環境のドメインで検証済みであることを前提とする
 - 詳細は [architecture.md](../architecture.md) の「6. サーバーレス処理 (Lambda)」セクションを参照
