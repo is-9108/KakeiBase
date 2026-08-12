@@ -50,7 +50,7 @@ cp terraform.tfvars.example terraform.tfvars
 `terraform.tfvars` を編集し、自宅の IP アドレスを設定する:
 
 ```hcl
-allowed_cidr = "203.0.113.1/32"  # 自分のグローバル IP
+allowed_cidr = ["203.0.113.1/32"]  # 自分のグローバル IP (複数指定可)
 
 # 月次レポートメールを使う場合 (任意)
 # ses_sender_email = "you@example.com"
