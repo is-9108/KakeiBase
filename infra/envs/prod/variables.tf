@@ -47,8 +47,8 @@ variable "availability_zones" {
 }
 
 variable "allowed_cidr" {
-  description = "CIDR block allowed to access ALB (e.g. home IP: x.x.x.x/32)"
-  type        = string
+  description = "CIDR blocks allowed to access ALB (e.g. home IP)"
+  type        = list(string)
 }
 
 variable "receipt_bucket_name" {
