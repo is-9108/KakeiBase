@@ -60,7 +60,7 @@ resource "aws_security_group_rule" "alb_ingress_https" {
   from_port         = 443
   to_port           = 443
   protocol          = "tcp"
-  cidr_blocks       = [var.allowed_cidr]
+  cidr_blocks       = var.allowed_cidr
 }
 
 resource "aws_security_group_rule" "alb_ingress_http" {
@@ -70,7 +70,7 @@ resource "aws_security_group_rule" "alb_ingress_http" {
   from_port         = 80
   to_port           = 80
   protocol          = "tcp"
-  cidr_blocks       = [var.allowed_cidr]
+  cidr_blocks       = var.allowed_cidr
 }
 
 resource "aws_security_group_rule" "alb_egress_to_ecs" {
