@@ -37,12 +37,14 @@ public class GeneratePresignedUrlUseCaseTests
         var sut = CreateSut();
         var result = await sut.ExecuteAsync(userId);
 
+        // ADR-0010: receipts/{userId}/{yyyy}/{MM}/{yyyyMMdd}_{HHmmss}.{fff}.jpg
         result.S3Key.Should().StartWith($"receipts/{userId}/");
         result.S3Key.Should().EndWith(".jpg");
         var parts = result.S3Key.Split('/');
-        parts.Should().HaveCount(3);
-        var uuidPart = parts[2][..^4]; // ".jpg" を除く
-        Guid.TryParse(uuidPart, out _).Should().BeTrue("ファイル名部分は GUID 形式である必要がある");
+        parts.Should().HaveCount(5, "キーは receipts/{userId}/{yyyy}/{MM}/{filename}.jpg の5階層");
+        parts[2].Should().HaveLength(4, "年は4桁");
+        parts[3].Should().HaveLength(2, "月はゼロ埋め2桁");
+        parts[4].Should().MatchRegex(@"^\d{8}_\d{6}\.\d{3}\.jpg$", "ファイル名は yyyyMMdd_HHmmss.fff.jpg 形式");
     }
 
     [Fact]
