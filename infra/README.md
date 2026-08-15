@@ -80,8 +80,11 @@ terraform apply       # 実行 (確認プロンプトで yes)
 
 ```bash
 # 1. Docker イメージをビルド
+# --platform は必須。ECS タスク定義は runtime_platform 未指定 = X86_64 のため、
+# Apple Silicon などの arm64 マシンで指定を省くと ECS が
+# CannotPullContainerError (image does not match the expected platform) で起動できない。
 cd backend
-docker build -t kakeibase-backend .
+docker build --platform linux/amd64 -t kakeibase-backend .
 
 # 2. ECR にログイン & プッシュ
 ECR_URL=$(terraform -chdir=../infra/envs/prod output -raw ecr_repository_url)
