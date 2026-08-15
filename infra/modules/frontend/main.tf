@@ -79,6 +79,10 @@ resource "aws_cloudfront_distribution" "this" {
   default_root_object = "index.html"
   comment             = "${var.project}-${var.env}"
 
+  # 許可 IP 以外をエッジで遮断する。ALB の SG から移管した
+  # ADR-0008 決定3 のアクセス制御がここに相当する (ADR-0014)。
+  web_acl_id = var.web_acl_arn
+
   # Origin 1: S3 (フロントエンド静的ファイル)
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
@@ -90,6 +94,14 @@ resource "aws_cloudfront_distribution" "this" {
   origin {
     domain_name = var.alb_dns_name
     origin_id   = "ALB-api"
+
+    # ALB のリスナールールがこの値を検証し、不一致なら 403 を返す (ADR-0014)。
+    # カスタムオリジンヘッダーはビューワーが送った同名ヘッダーを上書きするため、
+    # ブラウザ側からの偽装で ALB に到達することはできない。
+    custom_header {
+      name  = var.origin_verify_header_name
+      value = var.origin_verify_secret
+    }
 
     custom_origin_config {
       http_port              = 80

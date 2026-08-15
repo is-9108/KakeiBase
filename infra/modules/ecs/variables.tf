@@ -70,3 +70,15 @@ variable "receipt_bucket_name" {
   description = "Receipt S3 bucket name injected as Aws__S3__ReceiptBucket"
   type        = string
 }
+
+variable "origin_verify_secret" {
+  description = "Shared secret between the CloudFront custom origin header and the ALB listener rule"
+  type        = string
+  sensitive   = true
+}
+
+variable "origin_verify_header_name" {
+  description = "Custom origin header name used to verify requests came through CloudFront"
+  type        = string
+  default     = "X-Origin-Verify"
+}

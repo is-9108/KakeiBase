@@ -53,24 +53,24 @@ resource "aws_security_group" "rds" {
 
 # ------- ALB Rules -------
 
-resource "aws_security_group_rule" "alb_ingress_https" {
-  security_group_id = aws_security_group.alb.id
-  type              = "ingress"
-  description       = "HTTPS from allowed CIDR"
-  from_port         = 443
-  to_port           = 443
-  protocol          = "tcp"
-  cidr_blocks       = var.allowed_cidr
+# CloudFront のオリジン向けエッジ IP レンジ (AWS がメンテナンスするマネージドリスト)
+data "aws_ec2_managed_prefix_list" "cloudfront_origin_facing" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
 }
 
-resource "aws_security_group_rule" "alb_ingress_http" {
+# ALB には CloudFront エッジからのみ到達できるようにする。
+# このリストは「CloudFront 利用者全員」を許可するため、これ単体では自分の
+# ディストリビューションに限定できない。ALB リスナールールによるオリジン
+# 検証ヘッダーのチェックと組み合わせた多層防御にしている (ADR-0014)。
+# 実IP制限は CloudFront 側の AWS WAF に移した (ADR-0008 決定3 の要件は維持)。
+resource "aws_security_group_rule" "alb_ingress_from_cloudfront" {
   security_group_id = aws_security_group.alb.id
   type              = "ingress"
-  description       = "HTTP from allowed CIDR"
+  description       = "HTTP from CloudFront edge locations (origin-facing prefix list)"
   from_port         = 80
   to_port           = 80
   protocol          = "tcp"
-  cidr_blocks       = var.allowed_cidr
+  prefix_list_ids   = [data.aws_ec2_managed_prefix_list.cloudfront_origin_facing.id]
 }
 
 resource "aws_security_group_rule" "alb_egress_to_ecs" {

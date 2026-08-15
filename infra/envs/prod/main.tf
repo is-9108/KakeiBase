@@ -30,6 +30,31 @@ provider "aws" {
   region = var.aws_region
 }
 
+# WAF の scope = CLOUDFRONT は us-east-1 でのみ作成できる
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+
+# CloudFront -> ALB のオリジン検証に使う共有シークレット。
+# CloudFront がカスタムオリジンヘッダーとして付与し、ALB のリスナールールが
+# 一致を検証する。不一致 (= CloudFront を経由しない直接アクセス) は ALB が 403 を返す。
+# ecs と frontend の 2 モジュールで共有する値のため、ルートで生成して両方に渡す。
+resource "random_password" "origin_verify" {
+  length  = 48
+  special = false # HTTP ヘッダー値として扱うため英数字のみに限定する
+}
+
+module "waf" {
+  source = "../../modules/waf"
+  providers = {
+    aws.us_east_1 = aws.us_east_1
+  }
+  project      = var.project
+  env          = var.env
+  allowed_cidr = var.allowed_cidr
+}
+
 module "network" {
   source                   = "../../modules/network"
   project                  = var.project
@@ -41,12 +66,13 @@ module "network" {
   availability_zones       = var.availability_zones
 }
 
+# allowed_cidr は security ではなく waf モジュールへ渡す (ADR-0014)。
+# ALB の SG は CloudFront プレフィックスリストのみを許可する形に変わった。
 module "security" {
-  source       = "../../modules/security"
-  project      = var.project
-  env          = var.env
-  vpc_id       = module.network.vpc_id
-  allowed_cidr = var.allowed_cidr
+  source  = "../../modules/security"
+  project = var.project
+  env     = var.env
+  vpc_id  = module.network.vpc_id
 }
 
 module "ecr" {
@@ -76,6 +102,7 @@ module "ecs" {
   db_secret_arn          = module.database.db_secret_arn
   receipt_bucket_arn     = module.storage.bucket_arn
   receipt_bucket_name    = module.storage.bucket_name
+  origin_verify_secret   = random_password.origin_verify.result
 }
 
 module "storage" {
@@ -86,11 +113,13 @@ module "storage" {
 }
 
 module "frontend" {
-  source       = "../../modules/frontend"
-  project      = var.project
-  env          = var.env
-  bucket_name  = var.frontend_bucket_name
-  alb_dns_name = module.ecs.alb_dns_name
+  source               = "../../modules/frontend"
+  project              = var.project
+  env                  = var.env
+  bucket_name          = var.frontend_bucket_name
+  alb_dns_name         = module.ecs.alb_dns_name
+  origin_verify_secret = random_password.origin_verify.result
+  web_acl_arn          = module.waf.web_acl_arn
 }
 
 module "lambda" {

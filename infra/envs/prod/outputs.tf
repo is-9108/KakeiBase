@@ -97,3 +97,13 @@ output "lambda_monthly_report" {
   description = "Monthly report Lambda function name"
   value       = module.lambda.monthly_report_function_name
 }
+
+output "waf_web_acl_arn" {
+  description = "WAF WebACL ARN associated with the CloudFront distribution"
+  value       = module.waf.web_acl_arn
+}
+
+output "waf_ip_set_id" {
+  description = "WAF IPSet ID (used when the allowed IP changes)"
+  value       = module.waf.ip_set_id
+}

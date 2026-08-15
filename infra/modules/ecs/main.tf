@@ -51,14 +51,40 @@ resource "aws_lb_target_group" "api" {
   }
 }
 
+# CloudFront が付与するオリジン検証ヘッダーを持たないリクエストは全て拒否する。
+# SG の CloudFront プレフィックスリスト制限と合わせた多層防御 (ADR-0014)。
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.this.arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Forbidden"
+      status_code  = "403"
+    }
+  }
+}
+
+# ヘッダーが一致した場合のみ ECS へ転送する。
+# ターゲットグループのヘルスチェックはリスナーを経由せずタスクの :8080/health を
+# 直接叩くため、この変更でヘルスチェックが 403 になることはない。
+resource "aws_lb_listener_rule" "from_cloudfront" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 100
+
+  action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.api.arn
+  }
+
+  condition {
+    http_header {
+      http_header_name = var.origin_verify_header_name
+      values           = [var.origin_verify_secret]
+    }
   }
 }
 
