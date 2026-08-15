@@ -52,6 +52,9 @@ infra/**/*.tfstate
 infra/**/*.tfstate.*
 infra/**/*.tfvars
 !infra/**/*.tfvars.example
+# 保存済みプランには DB パスワードやオリジン検証シークレットが平文で含まれる
+infra/**/*.tfplan
+infra/**/tfplan
 # .terraform.lock.hcl は追跡する (プロバイダのバージョンとハッシュを固定し、
 # ローカルと CI で同じプロバイダが使われることを保証するため)
 infra/**/crash.log
