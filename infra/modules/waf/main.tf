@@ -11,9 +11,10 @@ terraform {
 }
 
 resource "aws_wafv2_ip_set" "allowed" {
-  provider           = aws.us_east_1
-  name               = "${var.project}-${var.env}-allowed-ips"
-  description        = "IP addresses allowed to access the application (ADR-0008)"
+  provider = aws.us_east_1
+  name     = "${var.project}-${var.env}-allowed-ips"
+  # description に使えるのは [\w+=:#@/\-,\.] と空白のみ。括弧やセミコロンは 400 になる
+  description        = "IP addresses allowed to access the application. See ADR-0008"
   scope              = "CLOUDFRONT"
   ip_address_version = "IPV4"
   addresses          = var.allowed_cidr
@@ -30,7 +31,7 @@ resource "aws_wafv2_ip_set" "allowed" {
 resource "aws_wafv2_web_acl" "this" {
   provider    = aws.us_east_1
   name        = "${var.project}-${var.env}-webacl"
-  description = "Allow only listed IPs; block everything else at the edge"
+  description = "Allow only listed IPs and block everything else at the edge"
   scope       = "CLOUDFRONT"
 
   default_action {
