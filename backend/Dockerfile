@@ -55,4 +55,10 @@ USER $APP_UID
 
 EXPOSE 8080
 ENV ASPNETCORE_HTTP_PORTS=8080
-ENTRYPOINT ["dotnet", "KakeiBase.WebApi.dll"]
+
+# ENTRYPOINT ではなく CMD にする。
+# ECS の containerOverrides は command (= CMD) しか上書きできず entryPoint は上書きできない。
+# ENTRYPOINT を置くとマイグレーション実行時に
+#   dotnet KakeiBase.WebApi.dll /app/efbundle --verbose
+# という「引数の追記」になり、Web API が起動してタスクが終了しなくなる。
+CMD ["dotnet", "KakeiBase.WebApi.dll"]
