@@ -1,5 +1,6 @@
 terraform {
-  required_version = ">= 1.5"
+  # backend の use_lockfile (S3 ネイティブロック) は Terraform 1.10 以降で使える
+  required_version = ">= 1.10"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -18,6 +19,10 @@ terraform {
     bucket = "kakeibase-terraform-state"
     key    = "prod/terraform.tfstate"
     region = "ap-northeast-1"
+    # state には RDS エンドポイントや Secrets Manager の ARN が含まれるため暗号化する
+    encrypt = true
+    # S3 ネイティブロック。DynamoDB テーブルを別途管理せずに排他制御できる
+    use_lockfile = true
   }
 }
 

@@ -24,7 +24,7 @@ infra/
 
 ## 前提条件
 
-- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.5
+- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.10 (state の S3 ネイティブロックに必要)
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) v2
 - AWS アカウントに AdministratorAccess 相当の権限を持つ IAM ユーザー/ロール
 - `aws configure` で認証情報が設定済み
@@ -33,12 +33,33 @@ infra/
 
 ### 1. State backend 用の S3 バケットを作成
 
+state を置くバケット自体は Terraform で作れない (鶏卵問題) ため、ここだけ手動で用意する。
+
 ```bash
-aws s3 mb s3://kakeibase-terraform-state --region ap-northeast-1
+aws s3api create-bucket \
+  --bucket kakeibase-terraform-state \
+  --region ap-northeast-1 \
+  --create-bucket-configuration LocationConstraint=ap-northeast-1
+
+# state の破損・誤削除から復旧できるようにする
 aws s3api put-bucket-versioning \
   --bucket kakeibase-terraform-state \
   --versioning-configuration Status=Enabled
+
+# state には RDS エンドポイントや Secrets Manager の ARN が含まれる
+aws s3api put-bucket-encryption \
+  --bucket kakeibase-terraform-state \
+  --server-side-encryption-configuration \
+  '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+
+aws s3api put-public-access-block \
+  --bucket kakeibase-terraform-state \
+  --public-access-block-configuration \
+  BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 ```
+
+> state のロックは `backend "s3"` の `use_lockfile = true` による S3 ネイティブロックを使う。
+> DynamoDB テーブルの作成は不要。
 
 ### 2. tfvars を作成
 
@@ -63,6 +84,16 @@ terraform init
 terraform plan        # 作成されるリソースを確認
 terraform apply       # 実行 (確認プロンプトで yes)
 ```
+
+> **別プラットフォームで開発する場合**
+> `.terraform.lock.hcl` は Git で追跡しており、現在は `windows_amd64` (開発環境) と
+> `linux_amd64` (CI) のハッシュのみを含む。macOS など別のプラットフォームで作業するときは、
+> 先に下記を実行してハッシュを追加し、その差分もコミットする。
+> そうしないと `terraform init` が lock ファイルを書き換えて意図しない差分が出る。
+>
+> ```bash
+> terraform providers lock -platform=darwin_arm64
+> ```
 
 `apply` 完了後、以下の output が表示される:
 

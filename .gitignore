@@ -52,7 +52,8 @@ infra/**/*.tfstate
 infra/**/*.tfstate.*
 infra/**/*.tfvars
 !infra/**/*.tfvars.example
-infra/**/.terraform.lock.hcl
+# .terraform.lock.hcl は追跡する (プロバイダのバージョンとハッシュを固定し、
+# ローカルと CI で同じプロバイダが使われることを保証するため)
 infra/**/crash.log
 
 # ===== Docker =====
