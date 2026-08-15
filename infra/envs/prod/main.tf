@@ -133,3 +133,25 @@ module "lambda" {
   receipt_bucket_arn     = module.storage.bucket_arn
   ses_sender_email       = var.ses_sender_email
 }
+
+# GitHub Actions のデプロイ用ロール。デプロイ対象のリソースの ARN を受け取って
+# 権限をそこに絞るため、他のモジュールの後ろに置く。
+# terraform apply の権限は与えていない (IaC の適用は手元からの手動運用を維持する)。
+module "cicd" {
+  source                      = "../../modules/cicd"
+  project                     = var.project
+  env                         = var.env
+  github_oidc_subjects        = var.github_oidc_subjects
+  create_oidc_provider        = var.create_github_oidc_provider
+  ecr_repository_arn          = module.ecr.repository_arn
+  ecs_cluster_arn             = module.ecs.ecs_cluster_arn
+  ecs_cluster_name            = module.ecs.ecs_cluster_name
+  ecs_service_arn             = module.ecs.ecs_service_arn
+  ecs_task_definition_family  = module.ecs.ecs_task_definition_family
+  ecs_task_role_arn           = module.ecs.ecs_task_role_arn
+  ecs_task_execution_role_arn = module.ecs.ecs_task_execution_role_arn
+  ecs_log_group_arn           = module.ecs.log_group_arn
+  frontend_bucket_arn         = module.frontend.frontend_bucket_arn
+  cloudfront_distribution_arn = module.frontend.cloudfront_distribution_arn
+  lambda_function_arns        = module.lambda.function_arns
+}

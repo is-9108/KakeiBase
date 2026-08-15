@@ -69,3 +69,25 @@ variable "ses_sender_email" {
   type        = string
   default     = ""
 }
+
+variable "github_oidc_subjects" {
+  # public リポジトリのため ':*' は使わない。フォークの PR から assume されるのを防ぐ
+  description = "Allowed GitHub OIDC sub claims. Restrict to the main branch; do not use ':*' on a public repo"
+  type        = list(string)
+  default     = ["repo:is-9108/KakeiBase:ref:refs/heads/main"]
+
+  validation {
+    # 信頼ポリシーは sub を StringLike で評価するため、'repo:owner/repo:*' を
+    # 入れると全ブランチ・フォークの PR からも assume できてしまう。
+    # 誤って広げられないよう変数側で弾く
+    condition     = alltrue([for s in var.github_oidc_subjects : !strcontains(s, ":*")])
+    error_message = "github_oidc_subjects must not contain ':*' (it would allow any ref, including fork PRs)."
+  }
+}
+
+variable "create_github_oidc_provider" {
+  # OIDC プロバイダはアカウントに 1 つしか作れない。既存がある場合は false にする
+  description = "Whether to create the GitHub OIDC provider (false to reference an existing one)"
+  type        = bool
+  default     = true
+}

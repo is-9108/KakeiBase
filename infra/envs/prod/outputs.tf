@@ -63,6 +63,16 @@ output "ecs_service_name" {
   value       = module.ecs.ecs_service_name
 }
 
+output "ecs_task_definition_family" {
+  description = "ECS task definition family (used by the CD one-off migration task)"
+  value       = module.ecs.ecs_task_definition_family
+}
+
+output "ecs_log_group_name" {
+  description = "CloudWatch log group name for the API container"
+  value       = module.ecs.log_group_name
+}
+
 output "receipt_bucket_name" {
   description = "Receipt S3 bucket name"
   value       = module.storage.bucket_name
@@ -106,4 +116,9 @@ output "waf_web_acl_arn" {
 output "waf_ip_set_id" {
   description = "WAF IPSet ID (used when the allowed IP changes)"
   value       = module.waf.ip_set_id
+}
+
+output "github_actions_role_arn" {
+  description = "IAM role ARN for GitHub Actions (register as the AWS_DEPLOY_ROLE_ARN secret)"
+  value       = module.cicd.github_actions_role_arn
 }
