@@ -75,6 +75,7 @@ module "ecs" {
   container_image        = "${module.ecr.repository_url}:latest"
   db_secret_arn          = module.database.db_secret_arn
   receipt_bucket_arn     = module.storage.bucket_arn
+  receipt_bucket_name    = module.storage.bucket_name
 }
 
 module "storage" {
