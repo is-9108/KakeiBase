@@ -8,7 +8,7 @@ variable "env" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "VPC ID"
-  type        = string
+variable "allowed_cidr" {
+  description = "CIDR blocks allowed to access the application via CloudFront (e.g. home IP)"
+  type        = list(string)
 }

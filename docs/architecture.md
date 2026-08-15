@@ -14,13 +14,18 @@
 ## 1. インフラ構成
 
 ```
-ブラウザ (自宅IPのみ許可)
+ブラウザ
+  │
+  ↓ (AWS WAF: 自宅IPのみ許可)
+CloudFront
   │
   ├── 静的ファイル (HTML/CSS/JS)
-  │     CloudFront → S3
+  │     → S3 (OAC 経由)
   │
-  └── API リクエスト
-        CloudFront → ALB (パブリックサブネット)
+  └── API リクエスト (/api/*)
+        → ALB (パブリックサブネット)
+             ├─ X-Origin-Verify ヘッダー一致 → forward
+             └─ 不一致 (CloudFront 以外)     → 403
                        → ECS Fargate (プライベートサブネット・アプリ)
                            → Amazon RDS (プライベートサブネット・DB, PostgreSQL)
 
@@ -43,7 +48,8 @@ Amazon EventBridge (毎月1日)
 |---|---|---|
 | CDN | Amazon CloudFront | 静的ファイル配信、APIキャッシュ制御 |
 | 静的ホスティング | Amazon S3 | React SPAのビルド成果物 |
-| ロードバランサー | ALB (Application Load Balancer) | HTTPSターミネーション、トラフィック分散(自宅IPのみ許可) |
+| ロードバランサー | ALB (Application Load Balancer) | トラフィック分散(CloudFront 専用オリジン。HTTPS 終端は CloudFront 側) |
+| WAF | AWS WAF (WebACL, CLOUDFRONT スコープ) | エッジでの IP 制限(自宅IPのみ許可) |
 | APIサーバー | ECS Fargate | .NET 10 Web API コンテナ実行(プライベートサブネット) |
 | データベース | Amazon RDS (PostgreSQL) | 家計データ永続化(プライベートサブネット・DB専用) |
 | コンテナレジストリ | Amazon ECR | Dockerイメージ管理 |
@@ -60,9 +66,11 @@ Amazon EventBridge (毎月1日)
 
 サブネットはパブリック/プライベート(アプリ)/プライベート(DB専用)の3種類に分離し、セキュリティグループはCIDRではなくSG間参照で連鎖させる。外部からのアクセスは自宅IPのみに限定する。詳細な検討過程・料金試算は [ADR-0008](./adr/0008-private-network-nat-gateway.md) を参照。
 
+IP 制限の実施レイヤーは CloudFront の AWS WAF に置いている。ALB は CloudFront 専用オリジンとして、マネージドプレフィックスリストによる SG 制限と `X-Origin-Verify` ヘッダーの検証で二重に保護する。経緯は [ADR-0014](./adr/0014-cloudfront-only-alb-access.md) を参照。
+
 | SG | インバウンド | アウトバウンド |
 |---|---|---|
-| `alb-sg` | 443 を自宅IPのみから許可 | `ecs-sg` の 8080 のみ |
+| `alb-sg` | 80 を CloudFront プレフィックスリストからのみ許可 | `ecs-sg` の 8080 のみ |
 | `ecs-sg` | 8080 を `alb-sg` からのみ | `rds-sg` の 5432、外向き 443 |
 | `lambda-sg` | なし | `rds-sg` の 5432、外向き 443 |
 | `rds-sg` | 5432 を `ecs-sg` と `lambda-sg` からのみ | なし |

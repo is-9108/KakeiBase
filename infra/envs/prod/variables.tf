@@ -47,7 +47,8 @@ variable "availability_zones" {
 }
 
 variable "allowed_cidr" {
-  description = "CIDR blocks allowed to access ALB (e.g. home IP)"
+  # ADR-0014 で ALB の SG から CloudFront の WAF IPSet へ移した
+  description = "CIDR blocks allowed to access the application via the CloudFront WAF (e.g. home IP)"
   type        = list(string)
 }
 
