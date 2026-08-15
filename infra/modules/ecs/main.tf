@@ -267,8 +267,10 @@ resource "aws_ecs_task_definition" "api" {
       # Npgsql 接続文字列形式: Host=...;Port=5432;Database=...;Username=...;Password=...
       { name = "ConnectionStrings__DefaultConnection", valueFrom = "${var.db_secret_arn}:connectionString::" },
       # Program.cs は Jwt:SecretKey を ?? string.Empty でフォールバックするため、
-      # 未注入だと署名鍵が空文字になり認証が機能しない
-      { name = "Jwt__SecretKey", valueFrom = "${aws_secretsmanager_secret.app.arn}:jwtSecretKey::" }
+      # 未注入だと署名鍵が空文字になり認証が機能しない。
+      # secret ではなく secret_version を参照して、値の投入完了を待たせる
+      # (db_secret_arn 側と同じ理由。database モジュールの outputs.tf を参照)
+      { name = "Jwt__SecretKey", valueFrom = "${aws_secretsmanager_secret_version.app.arn}:jwtSecretKey::" }
     ]
 
     logConfiguration = {
