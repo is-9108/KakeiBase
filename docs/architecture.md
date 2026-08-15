@@ -87,6 +87,10 @@ GitHub push/PR
         └── ECS デプロイ / S3 sync
 ```
 
+AWS への認証は OIDC フェデレーションで行い、長期のアクセスキーは保持しない([ADR-0015](./adr/0015-github-actions-oidc-federation.md))。
+ロールを assume できるのは `main` ブランチのワークフローのみに限定する。
+このロールに `terraform apply` の権限は与えておらず、インフラの適用は手元からの手動操作を維持する。
+
 ---
 
 ## 2. バックエンド構成

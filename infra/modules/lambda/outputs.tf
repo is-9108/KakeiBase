@@ -12,3 +12,12 @@ output "monthly_report_function_name" {
   description = "Monthly report Lambda function name"
   value       = aws_lambda_function.monthly_report.function_name
 }
+
+output "function_arns" {
+  description = "All Lambda function ARNs (for scoping the CD update permission)"
+  value = [
+    aws_lambda_function.subscription_scheduler.arn,
+    aws_lambda_function.receipt_ocr.arn,
+    aws_lambda_function.monthly_report.arn,
+  ]
+}

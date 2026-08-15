@@ -19,7 +19,9 @@ infra/
     ├── ecs/                # ALB + ECS Fargate + IAM (ECS Exec対応)
     ├── storage/            # S3 レシートバケット
     ├── frontend/           # S3 + CloudFront (OAC, SPA対応)
-    └── lambda/             # Lambda x3 + EventBridge + S3通知 + SES
+    ├── waf/                # WAF WebACL + IPSet (CloudFront スコープ / us-east-1)
+    ├── lambda/             # Lambda x3 + EventBridge + S3通知 + SES
+    └── cicd/               # GitHub OIDC プロバイダ + デプロイ用 IAM ロール
 ```
 
 ## 前提条件
@@ -103,7 +105,10 @@ terraform apply       # 実行 (確認プロンプトで yes)
 | `alb_dns_name` | ALB の DNS 名 |
 | `ecr_repository_url` | Docker イメージの push 先 |
 | `ecs_cluster_name` / `ecs_service_name` | ECS 操作時に使用 |
+| `ecs_task_definition_family` | マイグレーション用 one-off タスクの起動に使用 |
+| `ecs_log_group_name` | マイグレーションタスクのログ取得に使用 |
 | `frontend_bucket_name` | フロントエンドのデプロイ先 |
+| `github_actions_role_arn` | GitHub Actions が assume するロール (CD 設定に使用) |
 
 ## デプロイ手順
 
@@ -178,6 +183,29 @@ aws ecs execute-command \
   --command "/bin/sh"
 ```
 
+## CI/CD (GitHub Actions OIDC)
+
+`cicd` モジュールが GitHub OIDC プロバイダと、GitHub Actions が assume するデプロイ用ロールを作成する。
+長期のアクセスキーは発行しない ([ADR-0015](../docs/adr/0015-github-actions-oidc-federation.md))。
+
+```bash
+cd infra/envs/prod
+terraform output -raw github_actions_role_arn   # GitHub Secrets の AWS_DEPLOY_ROLE_ARN に登録する
+```
+
+ロールを assume できるのは **`main` ブランチのワークフローのみ**。フォークの PR からは assume できない。
+リポジトリ名を変えた場合やフォーク先で使う場合は `github_oidc_subjects` を更新する。
+
+```hcl
+# terraform.tfvars
+github_oidc_subjects = ["repo:<owner>/<repo>:ref:refs/heads/main"]
+
+# 同一 URL の OIDC プロバイダが既にアカウントにある場合 (アカウントごとに1つしか作れない)
+create_github_oidc_provider = false
+```
+
+このロールに **`terraform apply` の権限は無い**。インフラの変更は上記の「Terraform 初期化 & デプロイ」の手順で手元から適用する。
+
 ## インフラの削除
 
 ```bash
@@ -192,4 +220,6 @@ terraform destroy    # 確認プロンプトで yes
 - [ADR-0007: ECS + Lambda ハイブリッド構成](../docs/adr/0007-ecs-lambda-hybrid-no-rds-proxy.md)
 - [ADR-0008: プライベートネットワーク + NAT Gateway](../docs/adr/0008-private-network-nat-gateway.md)
 - [ADR-0009: Lambda ランタイムを Go に変更](../docs/adr/0009-lambda-runtime-go.md)
+- [ADR-0014: ALB へのアクセスを CloudFront 経由に限定](../docs/adr/0014-cloudfront-only-alb-access.md)
+- [ADR-0015: GitHub Actions から AWS への認証に OIDC を採用](../docs/adr/0015-github-actions-oidc-federation.md)
 - [AWS 構成図 (HTML)](../docs/aws-architecture.html)
