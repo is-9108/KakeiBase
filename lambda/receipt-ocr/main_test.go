@@ -15,8 +15,8 @@ import (
 // --- モック実装 ---
 
 type mockS3Client struct {
-	data    map[string][]byte
-	getErr  error
+	data   map[string][]byte
+	getErr error
 }
 
 func (m *mockS3Client) GetObject(_ context.Context, bucket, key string) ([]byte, error) {
@@ -43,12 +43,12 @@ func (m *mockTextractClient) AnalyzeExpense(_ context.Context, _ []byte) (*textr
 }
 
 type mockDB struct {
-	existsMap    map[string]bool
-	existsErr    error
-	categoryID   uuid.UUID
-	categoryErr  error
-	insertErr    error
-	inserted     []Transaction
+	existsMap   map[string]bool
+	existsErr   error
+	categoryID  uuid.UUID
+	categoryErr error
+	insertErr   error
+	inserted    []Transaction
 }
 
 func (m *mockDB) ExistsTransactionByReceiptKey(_ context.Context, receiptS3Key string) (bool, error) {

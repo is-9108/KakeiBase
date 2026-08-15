@@ -1,0 +1,21 @@
+# ビルド成果物
+**/bin/
+**/obj/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# イメージに入れる必要がないもの
+# KakeiBase.sln は除外しない: sln 単位で restore する構成に変えたときに
+# 原因の分かりにくいビルド失敗を招くため。
+tests/
+Dockerfile
+.dockerignore
+CLAUDE.md
+
+# ローカル専用の設定 (本番設定は ECS タスク定義の環境変数/シークレットで注入する)
+**/appsettings.Development.json
+**/appsettings.*.local.json
