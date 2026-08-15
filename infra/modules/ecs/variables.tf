@@ -62,7 +62,11 @@ variable "memory" {
 }
 
 variable "receipt_bucket_arn" {
-  description = "Receipt S3 bucket ARN for task role permissions (set in Phase 3)"
+  description = "Receipt S3 bucket ARN for task role permissions"
   type        = string
-  default     = ""
+}
+
+variable "receipt_bucket_name" {
+  description = "Receipt S3 bucket name injected as Aws__S3__ReceiptBucket"
+  type        = string
 }

@@ -105,8 +105,35 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-resource "aws_iam_role_policy" "ecs_read_db_secret" {
-  name = "${var.project}-${var.env}-ecs-read-db-secret"
+# ------- アプリケーションシークレット (JWT 署名鍵) -------
+# database モジュールと同じ random_password -> Secrets Manager のパターンを踏襲する。
+# 唯一の利用者が ECS タスクなので、専用モジュールには分けていない。
+
+resource "random_password" "jwt_secret" {
+  # HS256 の署名鍵は 32 バイト以上が必須。英数字のみで 64 バイト確保する
+  length  = 64
+  special = false
+}
+
+resource "aws_secretsmanager_secret" "app" {
+  name = "${var.project}/${var.env}/app"
+  # ポートフォリオ環境のため即時削除できるようにする (database モジュールと同じ方針)
+  recovery_window_in_days = 0
+
+  tags = {
+    Name    = "${var.project}-${var.env}-app-secret"
+    Project = var.project
+    Env     = var.env
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "app" {
+  secret_id     = aws_secretsmanager_secret.app.id
+  secret_string = jsonencode({ jwtSecretKey = random_password.jwt_secret.result })
+}
+
+resource "aws_iam_role_policy" "ecs_read_secrets" {
+  name = "${var.project}-${var.env}-ecs-read-secrets"
   role = aws_iam_role.ecs_task_execution.id
 
   policy = jsonencode({
@@ -114,7 +141,7 @@ resource "aws_iam_role_policy" "ecs_read_db_secret" {
     Statement = [{
       Effect   = "Allow"
       Action   = ["secretsmanager:GetSecretValue"]
-      Resource = [var.db_secret_arn]
+      Resource = [var.db_secret_arn, aws_secretsmanager_secret.app.arn]
     }]
   })
 }
@@ -160,11 +187,10 @@ resource "aws_iam_role_policy" "ecs_exec" {
   })
 }
 
-# レシートバケットへの S3 アクセス (Presigned URL 生成に必要 / Phase 3 で有効化)
+# レシートバケットへの S3 アクセス (Presigned URL 生成に必要)
 resource "aws_iam_role_policy" "ecs_s3_receipts" {
-  count = var.receipt_bucket_arn != "" ? 1 : 0
-  name  = "${var.project}-${var.env}-ecs-s3-receipts"
-  role  = aws_iam_role.ecs_task.id
+  name = "${var.project}-${var.env}-ecs-s3-receipts"
+  role = aws_iam_role.ecs_task.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -204,13 +230,19 @@ resource "aws_ecs_task_definition" "api" {
     environment = [
       { name = "ASPNETCORE_URLS", value = "http://+:${var.app_port}" },
       { name = "ASPNETCORE_ENVIRONMENT", value = "Production" },
-      { name = "AWS__Region", value = data.aws_region.current.name }
+      { name = "AWS__Region", value = data.aws_region.current.name },
+      # S3ReceiptStorageService が読む。未設定だと Presigned URL 発行時に
+      # InvalidOperationException になる
+      { name = "Aws__S3__ReceiptBucket", value = var.receipt_bucket_name }
     ]
 
     secrets = [
       # ECS がコンテナ起動時に Secrets Manager から値を注入する
       # Npgsql 接続文字列形式: Host=...;Port=5432;Database=...;Username=...;Password=...
-      { name = "ConnectionStrings__DefaultConnection", valueFrom = "${var.db_secret_arn}:connectionString::" }
+      { name = "ConnectionStrings__DefaultConnection", valueFrom = "${var.db_secret_arn}:connectionString::" },
+      # Program.cs は Jwt:SecretKey を ?? string.Empty でフォールバックするため、
+      # 未注入だと署名鍵が空文字になり認証が機能しない
+      { name = "Jwt__SecretKey", valueFrom = "${aws_secretsmanager_secret.app.arn}:jwtSecretKey::" }
     ]
 
     logConfiguration = {
