@@ -6,8 +6,46 @@ on:
   pull_request:
     branches: [main]
 
+# 同じブランチで新しい push があれば古い実行は打ち切る
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
+  # 変更のあった領域だけを後続ジョブで実行する
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      lambda: ${{ steps.filter.outputs.lambda }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/ci.yml'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/ci.yml'
+            lambda:
+              - 'lambda/**'
+              - '.github/workflows/ci.yml'
+            infra:
+              - 'infra/**'
+              - '.github/workflows/ci.yml'
+
   backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -43,6 +81,8 @@ jobs:
         run: dotnet test tests/KakeiBase.IntegrationTests --verbosity normal
 
   frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -63,5 +103,88 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # tsc -b による型チェックを CI に通す。
+      # これが無いと型エラーが main に入り、デプロイ時に初めて失敗する。
+      - name: Build
+        run: npm run build
+
       - name: Run tests
         run: npm run test -- --run
+
+  lambda:
+    needs: changes
+    if: needs.changes.outputs.lambda == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lambda
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: lambda/go.work
+          cache-dependency-path: lambda/**/go.sum
+
+      - name: gofmt
+        run: |
+          UNFORMATTED=$(gofmt -l .)
+          if [ -n "$UNFORMATTED" ]; then
+            echo "gofmt がかかっていないファイルがあります:"
+            echo "$UNFORMATTED"
+            exit 1
+          fi
+
+      # go workspace のルートは自身がモジュールではないため、ルートで ./... を指定すると
+      # "directory prefix . does not contain modules listed in go.work" になる。
+      # go list -m でワークスペース内のモジュールを列挙し、各ディレクトリで実行する。
+      - name: Vet and test
+        run: |
+          set -euo pipefail
+          mapfile -t dirs < <(go list -m -f '{{.Dir}}')
+          for dir in "${dirs[@]}"; do
+            echo "::group::$(basename "$dir")"
+            (cd "$dir" && go vet ./... && go test ./... -race -count=1)
+            echo "::endgroup::"
+          done
+
+  terraform:
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.8"
+          terraform_wrapper: false
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive infra/
+
+      # -backend=false により、state バケットや AWS 認証情報なしで構文検証できる
+      - name: Validate
+        working-directory: infra/envs/prod
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+  # ブランチ保護の必須チェックはこのジョブだけにする。
+  # 個別ジョブを必須にすると、path filter でスキップされたときにマージできなくなる。
+  #
+  # needs に changes を含めるのは必須。changes が失敗すると後続は全て skipped になり、
+  # skipped を成功扱いするこのジョブが「CI 基盤が壊れているのに緑」になってしまう。
+  # changes は条件なしで常に実行されるため skipped にはならず、失敗を確実に拾える。
+  ci-ok:
+    if: always()
+    needs: [changes, backend, frontend, lambda, terraform]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any job failed
+        run: |
+          echo '${{ toJSON(needs) }}'
+          echo '${{ toJSON(needs) }}' \
+            | jq -e 'all(.[]; .result == "success" or .result == "skipped")' > /dev/null
