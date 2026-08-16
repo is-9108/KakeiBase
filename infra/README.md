@@ -206,6 +206,75 @@ create_github_oidc_provider = false
 
 このロールに **`terraform apply` の権限は無い**。インフラの変更は上記の「Terraform 初期化 & デプロイ」の手順で手元から適用する。
 
+### CD ワークフロー
+
+`main` への push で [`.github/workflows/cd.yml`](../.github/workflows/cd.yml) が動く。
+変更のあった領域だけをデプロイし、3 ジョブは互いに独立させて並列に実行する。
+
+| ジョブ | 処理 |
+|---|---|
+| `backend` | ECR へ push → `ecs run-task` で EF Core マイグレーション → `update-service --force-new-deployment` |
+| `frontend` | `npm run build` → S3 へ同期 → CloudFront を無効化 |
+| `lambda` | 3 関数を arm64 でビルド → `update-function-code` |
+
+順序制約は `backend` ジョブ内の「マイグレーション → サービス更新」だけ。
+マイグレーションが失敗するとサービス更新に進まないため、旧タスクが動き続ける。
+
+`workflow_dispatch` から `target` (`all` / `backend` / `frontend` / `lambda`) を指定すると、
+変更の有無に関係なく強制的にデプロイできる。
+
+イメージには `:latest` と `:<git-sha>` の両方を付ける。タスク定義は `:latest` を参照し続けるため
+Terraform がタスク定義の唯一の所有者であり続け、CD によるドリフトが発生しない。
+
+### 必要な GitHub の設定
+
+値は `terraform -chdir=infra/envs/prod output` で取得する。
+
+**Secrets** (public リポジトリなので、アカウント ID を含む値はログに残さないよう Secrets にする)
+
+| 名前 | 取得元 |
+|---|---|
+| `AWS_DEPLOY_ROLE_ARN` | `github_actions_role_arn` |
+| `ECR_REPOSITORY_URL` | `ecr_repository_url` |
+
+**Variables**
+
+| 名前 | 取得元 |
+|---|---|
+| `AWS_REGION` | `ap-northeast-1` (固定) |
+| `ECS_CLUSTER` | `ecs_cluster_name` |
+| `ECS_SERVICE` | `ecs_service_name` |
+| `ECS_TASK_FAMILY` | `ecs_task_definition_family` |
+| `ECS_SUBNET_IDS` | `private_app_subnet_ids` (カンマ区切り) |
+| `ECS_SECURITY_GROUP_ID` | `ecs_sg_id` |
+| `ECS_LOG_GROUP` | `ecs_log_group_name` |
+| `FRONTEND_BUCKET` | `frontend_bucket_name` |
+| `CLOUDFRONT_DISTRIBUTION_ID` | `cloudfront_distribution_id` |
+| `LAMBDA_PREFIX` | `<project>-<env>` (例: `kakeibase-prod`)。関数名は `<prefix>-<ディレクトリ名>` で導出する |
+
+### ロールバック
+
+過去のイメージを `:latest` に付け替えて再デプロイする。
+
+```bash
+ECR_URL=$(terraform -chdir=infra/envs/prod output -raw ecr_repository_url)
+CLUSTER=$(terraform -chdir=infra/envs/prod output -raw ecs_cluster_name)
+SERVICE=$(terraform -chdir=infra/envs/prod output -raw ecs_service_name)
+
+docker pull "$ECR_URL:<戻したい git sha>"
+docker tag  "$ECR_URL:<戻したい git sha>" "$ECR_URL:latest"
+docker push "$ECR_URL:latest"
+
+aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" --force-new-deployment
+```
+
+DB マイグレーションのロールバックは CD に組み込んでいない。
+巻き戻す場合は ECS Exec でコンテナに入り、戻し先を明示して `efbundle` を実行する。
+
+```bash
+/app/efbundle <戻し先の Migration 名> --verbose
+```
+
 ## インフラの削除
 
 ```bash
