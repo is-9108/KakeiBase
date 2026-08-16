@@ -1,0 +1,317 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "デプロイ対象 (path filter を無視して強制実行する)"
+        type: choice
+        options: [all, backend, frontend, lambda]
+        default: all
+
+# CI と違い cancel-in-progress は false にする。
+# マイグレーション実行中のジョブを打ち切ると、DB が中途半端な状態のまま
+# __EFMigrationsHistory だけが進む可能性がある。
+concurrency:
+  group: cd-prod
+  cancel-in-progress: false
+
+# id-token は OIDC で AWS ロールを assume するために必須 (ADR-0015)
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # 変更のあった領域だけをデプロイする。
+  # workflow_dispatch のときは差分ではなく inputs.target で対象を決める。
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.decide.outputs.backend }}
+      frontend: ${{ steps.decide.outputs.frontend }}
+      lambda: ${{ steps.decide.outputs.lambda }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name == 'push'
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/cd.yml'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/cd.yml'
+            lambda:
+              - 'lambda/**'
+              - '.github/workflows/cd.yml'
+
+      - name: Decide deploy targets
+        id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TARGET: ${{ inputs.target }}
+          FILTER_BACKEND: ${{ steps.filter.outputs.backend }}
+          FILTER_FRONTEND: ${{ steps.filter.outputs.frontend }}
+          FILTER_LAMBDA: ${{ steps.filter.outputs.lambda }}
+        run: |
+          set -euo pipefail
+          for area in backend frontend lambda; do
+            if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+              if [ "$TARGET" = "all" ] || [ "$TARGET" = "$area" ]; then
+                value=true
+              else
+                value=false
+              fi
+            else
+              # paths-filter の出力は "true"/"false" の文字列。
+              # workflow_dispatch のときは filter 自体を実行しないので空文字になる。
+              case "$area" in
+                backend)  value="${FILTER_BACKEND:-false}" ;;
+                frontend) value="${FILTER_FRONTEND:-false}" ;;
+                lambda)   value="${FILTER_LAMBDA:-false}" ;;
+              esac
+            fi
+            echo "$area=$value" >> "$GITHUB_OUTPUT"
+            echo "$area=$value"
+          done
+
+  # 3 ジョブは互いに独立させて並列実行する。
+  # 順序制約は backend ジョブ内の「マイグレーション → サービス更新」だけ。
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # v1 系はセッションタグ付けが既定で有効で、信頼ポリシーに sts:TagSession が
+      # 必要になり assume に失敗する。cicd モジュールの信頼ポリシーは v4 前提。
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ECS タスク定義は runtime_platform 未指定 (= X86_64) なので amd64 を明示する。
+      # provenance を無効にしないとマルチプラットフォームのマニフェストリストになり、
+      # 初回に手動 push したイメージと形式が揃わない。
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          platforms: linux/amd64
+          provenance: false
+          push: true
+          tags: |
+            ${{ secrets.ECR_REPOSITORY_URL }}:latest
+            ${{ secrets.ECR_REPOSITORY_URL }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # タスク定義は :latest を参照し続けるため、Terraform 側にドリフトが出ない。
+      # sha タグはコミット追跡とロールバック用 (手順は infra/README.md)。
+      #
+      # efbundle は ConnectionStrings__DefaultConnection 環境変数を直接読むため
+      # --connection 引数もシェルも不要。Dockerfile は CMD なので command で上書きできる。
+      - name: Run EF Core migrations
+        env:
+          CLUSTER: ${{ vars.ECS_CLUSTER }}
+          FAMILY: ${{ vars.ECS_TASK_FAMILY }}
+          SUBNETS: ${{ vars.ECS_SUBNET_IDS }}
+          SG: ${{ vars.ECS_SECURITY_GROUP_ID }}
+          LOG_GROUP: ${{ vars.ECS_LOG_GROUP }}
+        run: |
+          set -euo pipefail
+
+          OVERRIDES='{"containerOverrides":[{"name":"api","command":["/app/efbundle","--verbose"]}]}'
+
+          RESULT=$(aws ecs run-task \
+            --cluster "$CLUSTER" \
+            --task-definition "$FAMILY" \
+            --launch-type FARGATE \
+            --started-by "gha-migrate-${GITHUB_SHA::7}" \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=DISABLED}" \
+            --overrides "$OVERRIDES")
+
+          # run-task はタスクを起動できなくても exit 0 を返し、failures に理由を入れる
+          if ! echo "$RESULT" | jq -e '.failures | length == 0' > /dev/null; then
+            echo "::error::run-task failed"
+            echo "$RESULT" | jq '.failures'
+            exit 1
+          fi
+
+          TASK_ARN=$(echo "$RESULT" | jq -r '.tasks[0].taskArn')
+          TASK_ID=${TASK_ARN##*/}
+          echo "migration task: $TASK_ID"
+
+          # tasks-stopped は 6 秒 x 100 回 = 最大 10 分待つ
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK_ARN"
+
+          # 失敗時の原因はログにしか出ないので、終了コード判定より先に出力する。
+          # タスクが即座に停止した場合はストリームが未作成のことがあるため失敗を許容する。
+          echo "::group::migration log"
+          aws logs get-log-events \
+            --log-group-name "$LOG_GROUP" \
+            --log-stream-name "ecs/api/$TASK_ID" \
+            --limit 200 \
+            --query 'events[].message' \
+            --output text || echo "(ログを取得できませんでした)"
+          echo "::endgroup::"
+
+          EXIT_CODE=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "::error::migration failed (exitCode=$EXIT_CODE)"
+            exit 1
+          fi
+
+      # マイグレーションが失敗するとここに来ないため、旧タスクが動き続ける (自動でセーフ)
+      - name: Deploy to ECS
+        env:
+          CLUSTER: ${{ vars.ECS_CLUSTER }}
+          SERVICE: ${{ vars.ECS_SERVICE }}
+        run: |
+          set -euo pipefail
+          aws ecs update-service \
+            --cluster "$CLUSTER" \
+            --service "$SERVICE" \
+            --force-new-deployment \
+            --query 'service.{name:serviceName,taskDefinition:taskDefinition}' \
+            --output table
+
+          # services-stable は 15 秒 x 40 回 = 最大 10 分待つ
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
+
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # VITE_API_BASE_URL は設定しない。CloudFront が同一オリジンで /api/* を
+      # ALB へ転送するため、空文字 (= 相対パス) が正しい。
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # ハッシュ付きアセットを先に置き、最後に index.html を差し替える。
+      # 逆順にすると、新しい index.html がまだ存在しないアセットを参照する瞬間ができる。
+      - name: Upload hashed assets
+        working-directory: frontend
+        env:
+          BUCKET: ${{ vars.FRONTEND_BUCKET }}
+        run: |
+          set -euo pipefail
+          aws s3 sync dist "s3://$BUCKET" \
+            --delete \
+            --exclude index.html \
+            --cache-control "public,max-age=31536000,immutable"
+
+      # index.html だけはキャッシュさせない。ここが古いと新しいアセットに切り替わらない。
+      - name: Upload index.html
+        working-directory: frontend
+        env:
+          BUCKET: ${{ vars.FRONTEND_BUCKET }}
+        run: |
+          set -euo pipefail
+          aws s3 cp dist/index.html "s3://$BUCKET/index.html" \
+            --cache-control "no-cache,no-store,must-revalidate"
+
+      # /index.html だけでは足りない。SPA ルーティングは S3 の 403/404 を index.html に
+      # 変換する custom_error_response で成立しており (ADR-0011)、error_caching_min_ttl は
+      # 未設定 = 既定 300 秒。つまり /transactions のような直リンクは「旧 index.html の内容」を
+      # 自身のキャッシュエントリとして保持する。ここを消さないと、s3 sync --delete で
+      # 消えた旧アセットを参照し続けて画面が壊れる。
+      # /* はパス課金上 1 パス扱いなので、個別指定より安く確実。
+      - name: Invalidate CloudFront
+        env:
+          DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          set -euo pipefail
+          aws cloudfront create-invalidation \
+            --distribution-id "$DISTRIBUTION_ID" \
+            --paths "/*" \
+            --query 'Invalidation.{id:Id,status:Status}' \
+            --output table
+
+  lambda:
+    needs: changes
+    if: needs.changes.outputs.lambda == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      # 1 関数の失敗で他の関数のデプロイを巻き添えにしない
+      fail-fast: false
+      matrix:
+        function: [subscription-scheduler, receipt-ocr, monthly-report]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: lambda/go.work
+          cache-dependency-path: lambda/**/go.sum
+
+      # provided.al2023 / arm64 で動かすため、ハンドラ名は bootstrap 固定。
+      # lambda.norpc は使わない RPC 実装を落としてバイナリを小さくする。
+      - name: Build
+        working-directory: lambda/${{ matrix.function }}
+        env:
+          GOOS: linux
+          GOARCH: arm64
+          CGO_ENABLED: "0"
+        run: |
+          set -euo pipefail
+          go build -tags lambda.norpc -ldflags="-s -w" -o bootstrap .
+          zip -j function.zip bootstrap
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # Terraform 側は filename / source_code_hash を ignore_changes しているため、
+      # ここでコードを更新してもドリフトにならない。
+      - name: Deploy
+        working-directory: lambda/${{ matrix.function }}
+        env:
+          FUNCTION_NAME: ${{ vars.LAMBDA_PREFIX }}-${{ matrix.function }}
+        run: |
+          set -euo pipefail
+          aws lambda update-function-code \
+            --function-name "$FUNCTION_NAME" \
+            --zip-file fileb://function.zip \
+            --query '{name:FunctionName,size:CodeSize,status:LastUpdateStatus}' \
+            --output table
+
+          aws lambda wait function-updated --function-name "$FUNCTION_NAME"
